@@ -28,8 +28,10 @@ export class CustomerUpdateDTO{
     @IsString({message:"invalid review"})
     @Matches( /^[a-zA-Z]+$/, {message:"enter a proper review"})
     review: string;
-    // @IsDate()
-    // Date=this.Date;
+    @IsString({ message: 'Review Image Name should be a string' })
+    Product_Image: string;
+    Date: Date;
+    
  }
 
  export class ReviewUpdateDTO{

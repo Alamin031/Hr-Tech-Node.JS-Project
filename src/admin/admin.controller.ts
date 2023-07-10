@@ -27,6 +27,8 @@ addAdmin(@Body() data:AdminDTO):object {
 return this.adminService.addAdmin(data);
 }
 
+
+
 }
 
 

@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, Request, Res, UploadedFile, UseInterceptors, UsePipes, ValidationPipe } from "@nestjs/common";
-import { CustomerDTO, CustomerUpdateDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewUpdateDTO } from "./customer.dto";
+import { CustomerDTO, CustomerUpdateDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewDTO, ReviewUpdateDTO } from "./customer.dto";
 import { CustomerService } from "./customer.service";
-import { ReviewDTO } from "./review.dto";
+// import { ReviewDTO } from "./review.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { MulterError, diskStorage } from "multer";
 import { AdminDTO } from "src/admin/admin.dto";
@@ -9,6 +9,7 @@ import { AdminDTO } from "src/admin/admin.dto";
 
 @Controller('customer')
 export class CustomerController{
+   
 
     constructor(private readonly customerService: CustomerService){}
     @Get('/index')
@@ -29,18 +30,96 @@ export class CustomerController{
    getCustomerName(@Query() qry:CustomerDTO): string {
     return this.customerService.getCustomerName(qry);
 }
-    @Post('/addcustomer')
+// .....................Customer Profile Manage .....................
+
+// * Feature 1 : Register a new customer
+    @Post('/register')
     @UsePipes(new ValidationPipe())
-    addCustomer(@Body() data:CustomerDTO):object {
+    register(@Body() data:CustomerDTO):object {
     console.log(data);
-    return this.customerService.addCustomer(data);
+    return this.customerService.register(data);
 }
+// * Feature 2 : Update customer profile
+    @Put('/updateprofile')
+    @UsePipes(new ValidationPipe())
+    updateprofile(@Body() data:CustomerUpdateDTO): object{
+        return this.customerService.updateprofile(data);
+}
+
+
+// * Feature 3 : Update customer profile by id
+    @Put('/updateprofile/:id')
+    @UsePipes(new ValidationPipe())
+    updateprofilebyID(@Param() id:number,@Body() data:CustomerUpdateDTO): object{
+        return this.customerService.updateprofileId(id,data);
+}
+
+ @Put('/update_profile_info/:id')
+    @UsePipes(new ValidationPipe())
+    UpdateProfileInfo(@Param('id', ParseIntPipe) id:number, @Body() updated_data:CustomerUpdateDTO): object{
+        return this.customerService.UpdateProfileInfo(id,updated_data);
+    }
+
+// * Feature 4 : Delete customer profile by id
+@Delete('/delete_profile/:id')
+    DeleteAccount(@Param('id', ParseIntPipe) id:number): object{
+        return this.customerService.DeleteAccount(id);
+    }
+
+
+
+    // .....................Customer Review Manage .....................//
+// * Feature 1 : Add a new review
+
+   @Post('/add_review/:id')
+    @UsePipes(new ValidationPipe())
+    @UseInterceptors(FileInterceptor('myfile',
+        { 
+            fileFilter: (req, file, cb) => {
+                if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/))
+                    cb(null, true);
+                else {
+                    cb(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false);
+                }
+            },
+            limits: { fileSize: 5000000 }, // 5 MB
+            storage:diskStorage({
+                destination: './uploads',
+                filename: function (req, file, cb) {
+                    cb(null,Date.now()+file.originalname)
+                },
+            })
+        }
+    ))
+    ProductReview(@Param('id', ParseIntPipe) id:number,@Body() review_info: ReviewDTO, @UploadedFile() myfileobj: Express.Multer.File):object {
+        review_info.Product_Image = myfileobj.filename; // Adding Book Image name to DTO to store in database
+        return this.customerService.ProductReview(id, review_info);
+    }
+
+    @Post('/addreviews')
+    addreviews(@Body() review) {
+        console.log(review);
+        return this.customerService.addreviews(review);
+    }
 
 @Post('/addreview')
     @UsePipes(new ValidationPipe())
     addreview(@Body() data:ReviewDTO):object {
     console.log(data);
     return this.customerService.addreview(data);
+}
+
+// * Feature 2 : Update review Info
+@Put('/update_review_info/:id')
+@UsePipes(new ValidationPipe())
+UpdatereviewInfo(@Param('id', ParseIntPipe) id:number, @Body() updated_data:ReviewDTO): object{
+    return this.customerService.UpdatereviewInfo(id,updated_data);
+}
+
+// * Feature 3 : Delete review Info
+@Delete('/delete_review/:id')
+DeletereviewInfo(@Param('id', ParseIntPipe) id:number): number{
+    return this.customerService.DeletereviewInfo(id);
 }
 
 @Post(('/addreview1'))
@@ -72,16 +151,7 @@ getImages(@Param('name') name, @Res() res) {
  res.sendFile(name,{ root: './uploads' })
  }
 
- @Put('/updatecustomer')
- //@UsePipes(new ValidationPipe())
- updateAdmin(@Body() data:CustomerUpdateDTO): object{
-     return this.customerService.updateCustomer(data);
- }
- @Put('/updatecustomer/:id')
- @UsePipes(new ValidationPipe())
- updateAdminbyID(@Param() id:number,@Body() data:CustomerUpdateDTO): object{
-     return this.customerService.updateCustomerId(id,data);
- }
+ 
 
  @Put('/updatereview')
  //@UsePipes(new ValidationPipe())
@@ -142,8 +212,8 @@ getOrders(@Param('customerId', ParseIntPipe) customerId:number) {
 
 
 @Delete('/orders/:id')
-DeleteAccount(@Param('id', ParseIntPipe) id:number): object{
-    return this.customerService.DeleteAccount(id);
+DeleteOrder(@Param('id', ParseIntPipe) id:number): object{
+    return this.customerService.DeleteOrder(id);
 }
 
 

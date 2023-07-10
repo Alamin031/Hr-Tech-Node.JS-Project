@@ -1,5 +1,5 @@
 import { Order } from "src/order/Order.entity";
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 
 @Entity("CustomerAdd")
@@ -14,6 +14,8 @@ email: string;
 password: string;
 @OneToMany(() => Order, (order) => order.customer)
 orders: Order[];
+@OneToMany(() => ProductReview, (ProductReview) => ProductReview.customer)
+ProductReview: ProductReview[];
 }
 
 
@@ -26,6 +28,10 @@ id: number;
 Review: string;
 @Column()
 Date: Date;
+@Column()
+Product_Image: string;
+@ManyToOne(() => CustomerEntity, (customer) => customer.ProductReview)
+customer: CustomerEntity;
 }
 
 @Entity("Customer_Dman_Review")
