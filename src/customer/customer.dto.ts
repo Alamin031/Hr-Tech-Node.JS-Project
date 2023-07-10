@@ -11,6 +11,8 @@ export class CustomerDTO{
     @IsEmail({}, {message:"invalid email"})
     email: string;
     password: string;
+    filenames: string;
+
 }
 
 export class CustomerUpdateDTO{
@@ -19,6 +21,11 @@ export class CustomerUpdateDTO{
     email: string;
     password: string;
  }
+ export class CustomerLoginDTO {
+   @IsEmail({}, { message: "invalid email" })
+  email: string;
+  password: string;
+}
 
  export class ReviewDTO{
     @IsNumber()

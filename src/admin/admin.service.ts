@@ -6,6 +6,7 @@ import { Order } from "src/order/Order.entity";
 import { Repository } from "typeorm";
 import { ProductEntity, AdminEntity } from "./admin.entity";
 import { SupplierEntity } from "src/supplier/Supplier.entity";
+import { CustomerDTO } from "src/customer/customer.dto";
 
 
 @Injectable()
@@ -49,6 +50,15 @@ export class AdminService{
     //     return data.email;
     // judi ami ekta valu print kori ta hole ei ta use korbo}
 
+    geCustomerId(id:number): Promise<CustomerEntity>
+    {
+       console.log(id);
+      return this.customerRepo.findOneBy({id:id});
+   }
 
+   
+   getCustomerName(mydata: CustomerDTO): string{
+       return mydata.name;
+       }
 
 }

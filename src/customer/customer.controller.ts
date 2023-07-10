@@ -67,6 +67,72 @@ export class CustomerController{
     }
 
 
+// * Feature 5 : signup customer profile
+@Post('/signup')
+@UseInterceptors(FileInterceptor('image',
+        {
+            fileFilter: (req, file, cb) => {
+                if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/))
+                    cb(null, true);
+                else {
+                    cb(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false);
+                }
+            },
+            limits: { fileSize: 3000000 },
+            storage: diskStorage({
+                destination: './uploads',
+                filename: function (req, file, cb) {
+                    cb(null, Date.now() + file.originalname)
+                },
+            })
+        }
+    ))
+    @UsePipes(new ValidationPipe)
+signup(@Body() mydata:CustomerDTO,@UploadedFile() imageobj: Express.Multer.File){
+console.log(mydata);
+console.log(imageobj.filename);
+mydata.filenames = imageobj.filename;
+return this.customerService.signup(mydata);
+
+}
+
+// * Feature 6 : signin customer profile
+
+@Post('/signin')
+signIn(@Body() data:CustomerDTO){
+    return this.customerService.signIn(data);
+}
+
+@Post('/login')
+    // @UsePipes(new ValidationPipe())
+    Login(@Body() customer_info: CustomerDTO): object{
+        return this.customerService.Login(customer_info);
+    }
+
+  // * Feature 7 : View Customer Profile
+  @Get('/profile/:id')
+  ViewCustomerProfile(@Param('id', ParseIntPipe) id:number): object{
+      return this.customerService.ViewCustomerProfile(id);
+  }
+
+  // * Feature 8 : View Customer Images
+  @Get('getimagebycustomerid/:customerId')
+async getimagebyid(@Param('customerId', ParseIntPipe) customerId:number, @Res() res){
+    const filename = await this.customerService.getimagebycustomerid(customerId);
+    res.sendFile(filename, { root: './uploads' })
+
+}
+
+
+
+ // * Feature 8 : Logout
+ @Post('/logout/:id')
+ Logout(@Param('id', ParseIntPipe) id:number): object{
+     return this.customerService.Logout(id);
+ }
+
+
+
 
     // .....................Customer Review Manage .....................//
 // * Feature 1 : Add a new review

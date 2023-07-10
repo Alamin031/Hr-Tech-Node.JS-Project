@@ -1,11 +1,13 @@
 import { Injectable } from "@nestjs/common";
-import { CustomerDTO, CustomerUpdateDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewUpdateDTO, ReviewDTO } from "./customer.dto";
+import { CustomerDTO, CustomerUpdateDTO, CustomerLoginDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewUpdateDTO, ReviewDTO } from "./customer.dto";
 // import { ReviewDTO } from "./review.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { CustomerEntity, ProductReview } from "./customer.entity";
 import { promises } from "dns";
 import { Order } from "src/order/Order.entity";
+import * as bcrypt from 'bcrypt';
+
 
 @Injectable()
 export class CustomerService{
@@ -75,6 +77,67 @@ export class CustomerService{
         return {"Success":"Account Deleted Successfully"};
     }
 
+// * Feature 5 : Signup customer profile
+    async signup(data: CustomerDTO): Promise<CustomerEntity> {
+        const salt = await bcrypt.genSalt();
+        data.password = await bcrypt.hash(data.password,salt);
+       return this.customerRepo.save(data);
+    }
+ // Feature 6 : Login customer profile
+    async signIn(data: CustomerLoginDTO) {
+    const userdata= await this.customerRepo.findOneBy({email:data.email});
+    const match:boolean = await bcrypt.compare(data.password, userdata.password);
+    return match;
+
+}
+
+async Login(customer_info: CustomerDTO): Promise<any> {
+        
+    const customer = await this.customerRepo.findOneBy({email: customer_info.email});
+    const match : boolean = await bcrypt.compare(customer_info.password, customer.password);
+    if (match) {
+        return customer;
+    }
+    return "Email or Password is incorrect";
+}
+
+
+// * Feature 7: View Customer Profile
+async ViewCustomerProfile(id: number): Promise<CustomerEntity> {
+    return this.customerRepo.findOneBy({id: id});
+}
+
+// // * Feature 8: Logout
+//     async logout(data: CustomerDTO): Promise<CustomerEntity> {
+//         return this.customerRepo.save(data);
+//     }
+
+
+// * Feature 8 : View Customer Images
+async getimagebycustomerid(customerId:number) {
+    const mydata:CustomerDTO =await this.customerRepo.findOneBy({ id:customerId});
+    console.log(mydata);
+    return  mydata.filenames;
+        }
+
+
+
+// * Feature 9: Logout
+async Logout(id: number): Promise<any> {
+    const currentSeller = this.customerRepo.findOneBy({id: id});
+    if(currentSeller){
+        // TODO: Destroy Session
+        return "Logout Successfully";
+    }else{
+        return "Logout Failed";
+    }
+}
+// * Feature 9: Forgot Password
+async ForgotPassword(data: CustomerDTO): Promise<CustomerEntity> {
+    return this.customerRepo.save(data);
+}
+
+
 
   
 
@@ -101,7 +164,7 @@ async UpdatereviewInfo(id:number, updated_data: ReviewDTO): Promise<ProductRevie
     await this.ProductReviewRepo.update(id, updated_data); // Where to Update , Updated Data
       return this.ProductReviewRepo.findOneBy({id: id});
     }
-    
+
 // * Feature 3 : Delete review Info
     DeletereviewInfo(id: number): any {
         this.ProductReviewRepo.delete(id);

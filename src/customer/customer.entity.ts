@@ -12,6 +12,8 @@ name: string;
 email: string;
 @Column()
 password: string;
+@Column()
+filenames: string;
 @OneToMany(() => Order, (order) => order.customer)
 orders: Order[];
 @OneToMany(() => ProductReview, (ProductReview) => ProductReview.customer)
