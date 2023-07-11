@@ -1,12 +1,14 @@
 import { Injectable } from "@nestjs/common";
-import { CustomerDTO, CustomerUpdateDTO, CustomerLoginDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewUpdateDTO, ReviewDTO } from "./customer.dto";
+import { CustomerDTO, CustomerUpdateDTO, CustomerLoginDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewUpdateDTO, ReviewDTO, AssignProductDTO, CustomersDTO } from "./customer.dto";
 // import { ReviewDTO } from "./review.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { CustomerEntity, ProductReview } from "./customer.entity";
+import {Assign_Product, CustomerEntity, DeliveryMan_Review, ProductReview } from "./customer.entity";
 import { promises } from "dns";
 import { Order } from "src/order/Order.entity";
 import * as bcrypt from 'bcrypt';
+import { ProductEntity } from "src/admin/admin.entity";
+import { ProductDTO } from "src/admin/admin.dto";
 
 
 @Injectable()
@@ -18,17 +20,28 @@ export class CustomerService{
     @InjectRepository(Order)
         private orderRepo: Repository<Order>,
 
-    @InjectRepository(ProductReview)
-    private ProductReviewRepo: Repository<ProductReview>
-    ){}
+    @InjectRepository(Assign_Product)
+        private assignproductRepo: Repository<Assign_Product>,
 
+    @InjectRepository(ProductEntity)
+        private ProductsRepo: Repository<ProductEntity>,
+
+    @InjectRepository(DeliveryMan_Review)
+        private DeliveryMan_ReviewRepo: Repository<DeliveryMan_Review>,
+
+        // @InjectRepository(AddressEntity)
+        // private AddressRepo: Repository<AddressEntity>,
+
+    @InjectRepository(ProductReview)
+       private ProductReviewRepo: Repository<ProductReview>
+    ){}
+    
 
     geCustomerId(id:number): Promise<CustomerEntity>
      {
         console.log(id);
        return this.customerRepo.findOneBy({id:id});
     }
-
 
 
 
@@ -60,12 +73,7 @@ export class CustomerService{
         return data;
     }
     // * Feature 3 : Update customer profile by id
-    updateprofileId(id:number,data: CustomerUpdateDTO): object
-    {
-        console.log(id);
-        console.log(data);
-        return data;
-    }
+   
     async UpdateProfileInfo(id: number, updated_data: CustomerUpdateDTO): Promise<CustomerEntity> {
         await this.customerRepo.update(id, updated_data); // Where to Update , Updated Data
         return this.customerRepo.findOneBy({id: id});
@@ -137,27 +145,40 @@ async ForgotPassword(data: CustomerDTO): Promise<CustomerEntity> {
     return this.customerRepo.save(data);
 }
 
+// // * Feature 10: Customer Add Address
+// async AddAddress(data: AddressEntity): Promise<AddressEntity> {
+//     return this.AddressRepo.save(data);
+// }
+
+// async createUser(user: CustomerEntity, userProfile: AddressEntity): Promise<CustomerEntity> {
+//     userProfile.user = user; //assign user object to UserProfile object 
+//     await this.userProfileRepository.save(userProfile);
+//     return this.userRepository.save(user);
+//     }
+
 
 
   
 
-    // .....................Customer Review Manage .....................//
+    // .....................Customer Product Review Manage .....................//
    
 // * Feature 1 : Add a Receive Product Review
-    addreview(data: ReviewDTO): object
-    {
-        return data;
-    }
-//2 nd way
-    async ProductReview(id:number,review_info: ReviewDTO) : Promise<ProductReview> {
-        //! Problem : Current logged in Seller_ID is not being added to the book table by using session
 
+//1 nd way
+    async ProductReview(id:number,review_info: ReviewDTO) : Promise<ProductReview> {
         return this.ProductReviewRepo.save(review_info);
     }
+//2 nd way
+    async addreview(data: ReviewDTO): Promise<ProductReview> {
+        return this.ProductReviewRepo.save(data);
+}
 //3 rd way
     async addreviews(review): Promise<ProductReview> {
         return this.ProductReviewRepo.save(review);
-    }
+}
+
+
+
 
 // * Feature 2 : Update customer review
 async UpdatereviewInfo(id:number, updated_data: ReviewDTO): Promise<ProductReview> {    
@@ -170,7 +191,96 @@ async UpdatereviewInfo(id:number, updated_data: ReviewDTO): Promise<ProductRevie
         this.ProductReviewRepo.delete(id);
         return {"Success":"Review Deleted Successfully"};
     }
+
+ // .....................Customer Assign_Product Manage .....................//
+
+    // * Feature 1 :  customer assignproduct
+    async assignproduct(data: AssignProductDTO): Promise<Assign_Product> {
+        const salt = await bcrypt.genSalt();
+       return this.assignproductRepo.save(data);
+    }
  
+
+// Feature 2 : Update Assign_Product Info
+async UpdateAssignProductInfo(id:number, updated_data: AssignProductDTO): Promise<Assign_Product> {
+    await this.assignproductRepo.update(id, updated_data); // Where to Update , Updated Data
+    return this.assignproductRepo.findOneBy({id: id});
+}
+
+// Feature 3 : Delete Assign_Product Info
+DeleteAssignProductInfo(id: number): any {
+    this.assignproductRepo.delete(id);
+    return {"Success":"Assign_Product Deleted Successfully"};
+}
+
+// Feature 4 : View Assign_Product Info
+async ViewAssignProductInfo(id: number): Promise<Assign_Product> {
+    return this.assignproductRepo.findOneBy({id: id});
+}
+
+// // Feature 7 : View All Assign_Product Info
+// async ViewAllAssignProductInfo(): Promise<Assign_Product[]> {
+//     return this.assignproductRepo.findAll();
+// }
+
+// Feature 6 : View Assign_Product Images
+async getimagebyassignproductid(assignproductId:number) {
+    const mydata:AssignProductDTO =await this.assignproductRepo.findOneBy({ id:assignproductId});
+    console.log(mydata);
+    return  mydata.Pic;
+        }
+
+        // Feature 6 : View Assign_Product Images And All Info
+async getimagebyassignproductidandallinfo(assignproductId:number) {
+    const mydata:AssignProductDTO =await this.assignproductRepo.findOneBy({ id:assignproductId});
+    console.log(mydata);
+    return  mydata;
+        }
+
+      // Feature 7 : Who Customer add Assign_Product
+
+        async getassignproductbycustomerid(id):Promise<CustomerEntity[]>{
+        return this.customerRepo.find({
+            where:{id:id},
+            relations: {
+                Assign_Product: true,
+            },
+        });                 
+    } 
+
+    // .....................Customer product  Manage .....................//
+
+// * Feature 1 : find all product
+async findAll(): Promise<ProductEntity[]> {
+    return this.ProductsRepo.find();
+}
+
+async ViewAllProductInfo(): Promise<ProductEntity[]> {
+    return this.ProductsRepo.find();
+}
+
+
+
+    // .....................Customer DeliveryMan Review Manage .....................//
+// * Feature 1 : Add a customer DeliveryMan Review
+    async adddeliverymanreview(data: DRevieweDTO): Promise<DeliveryMan_Review> {
+        return this.DeliveryMan_ReviewRepo.save(data);
+    }
+
+// * Feature 2 : Update customer DeliveryMan Review
+async UpdateDeliveryManReviewInfo(id:number, updated_data: DRevieweDTO): Promise<DeliveryMan_Review> {
+    await this.DeliveryMan_ReviewRepo.update(id, updated_data); // Where to Update , Updated Data
+    return this.DeliveryMan_ReviewRepo.findOneBy({id: id});
+}
+
+// * Feature 3 : Delete DeliveryMan Review Info
+DeleteDeliveryManReviewInfo(id: number): any {
+    this.DeliveryMan_ReviewRepo.delete(id);
+    return {"Success":"DeliveryMan Review Deleted Successfully"};
+}
+
+
+
 
     
 
@@ -190,7 +300,7 @@ async UpdatereviewInfo(id:number, updated_data: ReviewDTO): Promise<ProductRevie
     dupdateReview(data: DRevieweUpdateDTO): object
     {
        
-        console.log(data.review);
+        console.log(data.Review);
         return data;
     }
 
@@ -201,15 +311,14 @@ async UpdatereviewInfo(id:number, updated_data: ReviewDTO): Promise<ProductRevie
         return data;
     }
 
-    addreviewd(data: DRevieweDTO): object
-    {
-        return data;
-    }
+    // addreviewd(data: DRevieweDTO): object
+    // {
+    //     return data;
+    // }
 
     DRevieweUpdateDTO(data: ReviewUpdateDTO): object {
         throw new Error("Method not implemented.");
     }
-
 
 
 
@@ -225,11 +334,7 @@ async UpdatereviewInfo(id:number, updated_data: ReviewDTO): Promise<ProductRevie
             relations: {
                 orders: true,
             },
-        });
-        if (!CustomerEntity) {
-            throw new Error("Customer not found.");
-        }      
-            
+        });                 
     } 
 
 
@@ -305,6 +410,9 @@ async UpdatereviewInfo(id:number, updated_data: ReviewDTO): Promise<ProductRevie
             
         //     return customer.orders;
         //     }
-    
+        // async productadd(data: ProductDTO): Promise<ProductEntity> {
+        //     const salt = await bcrypt.genSalt();
+        //    return this.ProductsRepo.save(data);
+        // }
 
 }

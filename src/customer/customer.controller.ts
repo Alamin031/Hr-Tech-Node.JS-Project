@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, Request, Res, UploadedFile, UseInterceptors, UsePipes, ValidationPipe } from "@nestjs/common";
-import { CustomerDTO, CustomerUpdateDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewDTO, ReviewUpdateDTO } from "./customer.dto";
+import { AssignProductDTO, CustomerDTO, CustomerUpdateDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewDTO, ReviewUpdateDTO } from "./customer.dto";
 import { CustomerService } from "./customer.service";
 // import { ReviewDTO } from "./review.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
@@ -23,9 +23,6 @@ export class CustomerController{
    }
 
 
-
-
-   
    @Get('/search')
    getCustomerName(@Query() qry:CustomerDTO): string {
     return this.customerService.getCustomerName(qry);
@@ -48,13 +45,7 @@ export class CustomerController{
 
 
 // * Feature 3 : Update customer profile by id
-    @Put('/updateprofile/:id')
-    @UsePipes(new ValidationPipe())
-    updateprofilebyID(@Param() id:number,@Body() data:CustomerUpdateDTO): object{
-        return this.customerService.updateprofileId(id,data);
-}
-
- @Put('/update_profile_info/:id')
+@Put('/update_profile_info/:id')
     @UsePipes(new ValidationPipe())
     UpdateProfileInfo(@Param('id', ParseIntPipe) id:number, @Body() updated_data:CustomerUpdateDTO): object{
         return this.customerService.UpdateProfileInfo(id,updated_data);
@@ -80,7 +71,7 @@ export class CustomerController{
             },
             limits: { fileSize: 3000000 },
             storage: diskStorage({
-                destination: './uploads',
+                destination: './uploads/customer_register_img',
                 filename: function (req, file, cb) {
                     cb(null, Date.now() + file.originalname)
                 },
@@ -123,8 +114,6 @@ async getimagebyid(@Param('customerId', ParseIntPipe) customerId:number, @Res() 
 
 }
 
-
-
  // * Feature 8 : Logout
  @Post('/logout/:id')
  Logout(@Param('id', ParseIntPipe) id:number): object{
@@ -137,42 +126,42 @@ async getimagebyid(@Param('customerId', ParseIntPipe) customerId:number, @Res() 
     // .....................Customer Review Manage .....................//
 // * Feature 1 : Add a new review
 
-   @Post('/add_review/:id')
-    @UsePipes(new ValidationPipe())
-    @UseInterceptors(FileInterceptor('myfile',
-        { 
-            fileFilter: (req, file, cb) => {
-                if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/))
-                    cb(null, true);
-                else {
-                    cb(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false);
-                }
-            },
-            limits: { fileSize: 5000000 }, // 5 MB
-            storage:diskStorage({
-                destination: './uploads',
-                filename: function (req, file, cb) {
-                    cb(null,Date.now()+file.originalname)
-                },
-            })
-        }
-    ))
-    ProductReview(@Param('id', ParseIntPipe) id:number,@Body() review_info: ReviewDTO, @UploadedFile() myfileobj: Express.Multer.File):object {
-        review_info.Product_Image = myfileobj.filename; // Adding Book Image name to DTO to store in database
-        return this.customerService.ProductReview(id, review_info);
-    }
+//    @Post('/add_review/:id')
+//     @UsePipes(new ValidationPipe())
+//     @UseInterceptors(FileInterceptor('myfile',
+//         { 
+//             fileFilter: (req, file, cb) => {
+//                 if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/))
+//                     cb(null, true);
+//                 else {
+//                     cb(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false);
+//                 }
+//             },
+//             limits: { fileSize: 5000000 }, // 5 MB
+//             storage:diskStorage({
+//                 destination: './uploads',
+//                 filename: function (req, file, cb) {
+//                     cb(null,Date.now()+file.originalname)
+//                 },
+//             })
+//         }
+//     ))
+//     ProductReview(@Param('id', ParseIntPipe) id:number,@Body() review_info: ReviewDTO, @UploadedFile() myfileobj: Express.Multer.File):object {
+//         review_info.Product_Image = myfileobj.filename; // Adding Book Image name to DTO to store in database
+//         return this.customerService.ProductReview(id, review_info);
+//     }
 
-    @Post('/addreviews')
-    addreviews(@Body() review) {
-        console.log(review);
-        return this.customerService.addreviews(review);
-    }
+@Post('/add_review')
+@UsePipes(new ValidationPipe())
+     addreview(@Body() data:ReviewDTO):object {
+        console.log(data);
+        return this.customerService.addreview(data);
+}
 
-@Post('/addreview')
-    @UsePipes(new ValidationPipe())
-    addreview(@Body() data:ReviewDTO):object {
-    console.log(data);
-    return this.customerService.addreview(data);
+@Post('/addreviews')
+addreviews(@Body() review) {
+    console.log(review);
+    return this.customerService.addreviews(review);
 }
 
 // * Feature 2 : Update review Info
@@ -187,6 +176,109 @@ UpdatereviewInfo(@Param('id', ParseIntPipe) id:number, @Body() updated_data:Revi
 DeletereviewInfo(@Param('id', ParseIntPipe) id:number): number{
     return this.customerService.DeletereviewInfo(id);
 }
+
+
+    // .....................Customer Assign_Product Manage .....................//
+// * Feature 1 : Add a customer Assign_Product
+@Post('/add_assign_product')
+@UseInterceptors(FileInterceptor('image',
+        {
+            fileFilter: (req, file, cb) => {
+                if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/))
+                    cb(null, true);
+                else {
+                    cb(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false);
+                }
+            },
+            limits: { fileSize: 3000000 },
+            storage: diskStorage({
+                destination: './uploads/assignproduct',
+                filename: function (req, file, cb) {
+                    cb(null, Date.now() + file.originalname)
+                },
+            })
+        }
+    ))
+    @UsePipes(new ValidationPipe)
+    assignproduct(@Body() mydata:AssignProductDTO,@UploadedFile() imageobj: Express.Multer.File){
+console.log(mydata);
+console.log(imageobj.filename);
+mydata.Pic = imageobj.filename;
+return this.customerService.assignproduct(mydata);
+
+}
+// Feature 2 : Update Assign_Product Info
+@Put('/update_assign_product_info/:id')
+@UsePipes(new ValidationPipe())
+UpdateAssignProductInfo(@Param('id', ParseIntPipe) id:number, @Body() updated_data:AssignProductDTO): object{
+    return this.customerService.UpdateAssignProductInfo(id,updated_data);
+}
+
+// Feature 3 : Delete Assign_Product Info
+@Delete('/delete_assign_product/:id')
+DeleteAssignProductInfo(@Param('id', ParseIntPipe) id:number): number{
+    return this.customerService.DeleteAssignProductInfo(id);
+}
+
+// Feature 4 : View Assign_Product Info
+@Get('/view_assign_product/:id')
+ViewAssignProductInfo(@Param('id', ParseIntPipe) id:number): object{
+    return this.customerService.ViewAssignProductInfo(id);
+}
+
+// Feature 5 : View Assign_Product Images And All Info
+@Get('getimagebyassignproductid/:assignproductId')
+async getimagebyassignproductid(@Param('assignproductId', ParseIntPipe) assignproductId:number, @Res() res){
+    const filename = await this.customerService.getimagebyassignproductid(assignproductId);
+            res.sendFile(filename, { root: './uploads/assignproduct' })   
+
+}
+// Feature 6 : View Assign_Product All Info
+        @Get('getimagebyassignproductidandallinfo/:assignproductId')
+        async getimagebyassignproductidandallinfo(@Param('assignproductId', ParseIntPipe) assignproductId:number, @Res() res){
+            const filename = await this.customerService.getimagebyassignproductidandallinfo(assignproductId);
+            // res.sendFile(filename, { root: './uploads/assignproduct' })   
+            // return filename;
+        }
+
+        // Feature 7 : Who Customer add Assign_Product
+        @Get('/getassignproductbycustomerid/:customerId')
+        getassignproductbycustomerid(@Param('customerId', ParseIntPipe) customerId:number) {
+            return this.customerService.getassignproductbycustomerid(customerId);
+        }
+
+
+    // .....................Customer DeliveryMan Review Manage .....................//
+// * Feature 1 : Add a customer DeliveryMan Review
+@Post('/add_deliveryman_review')
+@UsePipes(new ValidationPipe())
+adddeliverymanreview(@Body() data:DRevieweDTO):object {
+console.log(data);
+return this.customerService.adddeliverymanreview(data);
+}
+
+// * Feature 2 : Update customer DeliveryMan Review
+@Put('/update_deliveryman_review_info/:id')
+@UsePipes(new ValidationPipe())
+UpdateDeliveryManReviewInfo(@Param('id', ParseIntPipe) id:number, @Body() updated_data:DRevieweDTO): object{
+    return this.customerService.UpdateDeliveryManReviewInfo(id,updated_data);
+}
+// * Feature 3 : Delete DeliveryMan Review Info
+@Delete('/delete_deliveryman_review/:id')
+DeleteDeliveryManReviewInfo(@Param('id', ParseIntPipe) id:number): number{
+    return this.customerService.DeleteDeliveryManReviewInfo(id);
+}
+
+
+
+// Feature 7 : View All Product Info
+
+@Get('/view_all__product')
+ViewAllProductInfo(): object{
+    return this.customerService.ViewAllProductInfo();
+}
+
+
 
 @Post(('/addreview1'))
 @UseInterceptors(FileInterceptor('myfile',
@@ -240,12 +332,12 @@ getImages(@Param('name') name, @Res() res) {
  dupdateReviewId(@Param() id:number,@Body() data:DRevieweUpdateDTO): object{
      return this.customerService.dupdateReviewId(id,data);
  }
- @Post('/addreviewd')
-//  @UsePipes(new ValidationPipe())
- addreviewd(@Body() data:DRevieweDTO):object {
- console.log(data);
- return this.customerService.addreviewd(data);
-}
+//  @Post('/addreviewd')
+// //  @UsePipes(new ValidationPipe())
+//  addreviewd(@Body() data:DRevieweDTO):object {
+//  console.log(data);
+//  return this.customerService.addreviewd(data);
+// }
 
 
 

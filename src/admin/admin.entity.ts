@@ -17,24 +17,23 @@ password: string;
 @Entity("Products")
 export class ProductEntity{
 @PrimaryGeneratedColumn()
-PRODUCT_ID: number;
+id: number;
 @Column()
 Product_Name: string;
 @Column()
 Product_Brands_Name: string;
 @Column()
-Price: string;
+Price: number;
 @Column()
 Description: string;
 @Column()
 Product_Image: string;
 @Column()
-Quantity: string;
+Quantity: number;
 @Column()
 Product_Category: string;
 @ManyToOne(() => SupplierEntity, (Supplier) => Supplier.Product)
 Supplier: SupplierEntity;
-
 }
 
 

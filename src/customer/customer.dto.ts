@@ -15,6 +15,18 @@ export class CustomerDTO{
 
 }
 
+export class CustomersDTO{
+   //  @IsNumber()
+   //  @IsNotEmpty()
+    id:number;
+    @IsString({message:"invalid name"})
+    @Matches( /^[a-zA-Z]+$/, {message:"enter a proper name"})
+    name: string;
+    @IsEmail({}, {message:"invalid email"})
+    filenames: string;
+
+}
+
 export class CustomerUpdateDTO{
     id:number;
     name: string;
@@ -28,16 +40,12 @@ export class CustomerUpdateDTO{
 }
 
  export class ReviewDTO{
-    @IsNumber()
-    @IsNotEmpty()
     id:number;
     @IsNotEmpty()
     @IsString({message:"invalid review"})
-    @Matches( /^[a-zA-Z]+$/, {message:"enter a proper review"})
-    review: string;
-    @IsString({ message: 'Review Image Name should be a string' })
-    Product_Image: string;
-    Date: Date;
+    Review: string;
+    Date: string;
+   //  Product_Image: string;
     
  }
 
@@ -53,14 +61,12 @@ export class CustomerUpdateDTO{
  }
 
  export class DRevieweDTO{
-    @IsNumber()
-    @IsNotEmpty()
     id:number;
     @IsNotEmpty()
     @IsString({message:"invalid review"})
     @Matches( /^[a-zA-Z]+$/, {message:"enter a proper review"})
-    review: string;
-    // Date=this.Date;
+    Review: string;
+      Date: string;
  }
 
  export class DRevieweUpdateDTO{
@@ -69,6 +75,23 @@ export class CustomerUpdateDTO{
     id:number;
    @IsString({message:"invalid review"})
    @Matches( /^[a-zA-Z]+$/, {message:"enter a proper review"})
-   review: string;
+   Review: string;
    // Date=this.Date;
+}
+
+export class AssignProductDTO{
+  
+   id:number;
+   @IsNotEmpty()
+   @IsString({message:"invalid product name"})
+   @Matches( /^[a-zA-Z]+$/, {message:"enter a proper product name"})
+   Product_Name: string;
+   @IsNotEmpty()
+   @IsString({message:"invalid problem"})
+   @Matches( /^[a-zA-Z]+$/, {message:"enter a proper problem"})
+   Problem: string;
+   Date: string;
+   Pic: string;
+   Address: string;
+
 }
