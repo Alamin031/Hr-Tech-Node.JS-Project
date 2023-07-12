@@ -5,7 +5,7 @@ import { CustomerEntity } from "./customer.entity";
 export class AddressEntity{
 
     @PrimaryGeneratedColumn()
-    Address_ID : number;
+    id : number;
     @Column()
     Street : string;
     @Column()

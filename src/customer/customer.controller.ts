@@ -1,10 +1,15 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, Request, Res, UploadedFile, UseInterceptors, UsePipes, ValidationPipe } from "@nestjs/common";
-import { AssignProductDTO, CustomerDTO, CustomerUpdateDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewDTO, ReviewUpdateDTO } from "./customer.dto";
+import { Body, Controller, Delete, ForbiddenException, Get, HttpStatus, Param, ParseIntPipe, Post, Put, Query, Request, Res, Session, UploadedFile, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from "@nestjs/common";
+import { AddAddressDTO, AssignProductDTO, CustomerDTO, CustomerUpdateDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewDTO, ReviewUpdateDTO, editProductDTO } from "./customer.dto";
 import { CustomerService } from "./customer.service";
 // import { ReviewDTO } from "./review.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { MulterError, diskStorage } from "multer";
 import { AdminDTO } from "src/admin/admin.dto";
+import { CustomerEntity } from "./customer.entity";
+import { AddressEntity } from "./customer_address.entity";
+import session from "express-session";
+import { SessionGuard } from "./session.gaurd";
+import { OrderDTO } from "src/order/order.dto";
 
 
 @Controller('customer')
@@ -30,75 +35,87 @@ export class CustomerController{
 // .....................Customer Profile Manage .....................
 
 // * Feature 1 : Register a new customer
-    @Post('/register')
-    @UsePipes(new ValidationPipe())
-    register(@Body() data:CustomerDTO):object {
-    console.log(data);
-    return this.customerService.register(data);
+  // Registration
+  @Post('/registration')
+  @UsePipes(new ValidationPipe)
+  @UseInterceptors(FileInterceptor('profilePicture',
+  { fileFilter(req, file, callback) {
+      if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/)) {
+          callback(null, true);
+      } else {
+          callback(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false)
+      }
+  },
+  limits: { fileSize: 1000000 },
+  storage:diskStorage({
+      destination: './uploads/customer_register_img',
+      filename(req, file, callback) {
+          callback(null, Date.now() + file.originalname)
+      },
+  })
+  }))
+  async registerCustomer(@Session() session, @Body() data:CustomerDTO, @UploadedFile() profilePicture: Express.Multer.File) {
+    data.profilePic = profilePicture.filename;
+      if (data.password !== data.confirmPassword) {
+          throw new ForbiddenException({
+              status: HttpStatus.FORBIDDEN,
+              message: "Password and confirm password does not match."
+          });
+      }
+      const CustomerDetails = await this.customerService.registerCustomer(data);
+      session.CustomerID = CustomerDetails.customerid;
+      session.email = CustomerDetails.email;
+      session.password = CustomerDetails.password;
+      console.log(session.email);
+      console.log(session.CustomerID);
+      console.log(session.password);
+      console.log(data);
+    //   return this.customerService.registerCustomer(data);
+      return "Hello Customer Your Registration successful";
+  }
+
+  // * Feature 2 : Login customer
+
+  @Post('/loginn')
+async login(@Query() query:CustomerDTO, @Session() session) {
+   const CustomerDetails = await this.customerService.login(query);
+   session.CustomerID = CustomerDetails.customerid;
+   session.email = CustomerDetails.email;
+   session.profilePicture = CustomerDetails.profilePic;
+   return "Login successfull";
 }
+
+// * Feature 8 : view customer profile
+    @Get('/showprofiledetails')
+    @UseGuards(SessionGuard)
+    showProfileDetails(@Session() session) {
+        return this.customerService.showProfileDetails(session.CustomerID);
+}
+
 // * Feature 2 : Update customer profile
     @Put('/updateprofile')
+    @UseGuards(SessionGuard)
     @UsePipes(new ValidationPipe())
     updateprofile(@Body() data:CustomerUpdateDTO): object{
         return this.customerService.updateprofile(data);
 }
 
-
 // * Feature 3 : Update customer profile by id
 @Put('/update_profile_info/:id')
+@UseGuards(SessionGuard)
     @UsePipes(new ValidationPipe())
-    UpdateProfileInfo(@Param('id', ParseIntPipe) id:number, @Body() updated_data:CustomerUpdateDTO): object{
+    UpdateProfileInfo(@Param('id', ParseIntPipe) id:number, @Session() session, @Body() updated_data:CustomerUpdateDTO): object{
         return this.customerService.UpdateProfileInfo(id,updated_data);
     }
 
+
 // * Feature 4 : Delete customer profile by id
 @Delete('/delete_profile/:id')
+@UseGuards(SessionGuard)
     DeleteAccount(@Param('id', ParseIntPipe) id:number): object{
         return this.customerService.DeleteAccount(id);
     }
 
-
-// * Feature 5 : signup customer profile
-@Post('/signup')
-@UseInterceptors(FileInterceptor('image',
-        {
-            fileFilter: (req, file, cb) => {
-                if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/))
-                    cb(null, true);
-                else {
-                    cb(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false);
-                }
-            },
-            limits: { fileSize: 3000000 },
-            storage: diskStorage({
-                destination: './uploads/customer_register_img',
-                filename: function (req, file, cb) {
-                    cb(null, Date.now() + file.originalname)
-                },
-            })
-        }
-    ))
-    @UsePipes(new ValidationPipe)
-signup(@Body() mydata:CustomerDTO,@UploadedFile() imageobj: Express.Multer.File){
-console.log(mydata);
-console.log(imageobj.filename);
-mydata.filenames = imageobj.filename;
-return this.customerService.signup(mydata);
-
-}
-
-// * Feature 6 : signin customer profile
-
-@Post('/signin')
-signIn(@Body() data:CustomerDTO){
-    return this.customerService.signIn(data);
-}
-
-@Post('/login')
-    // @UsePipes(new ValidationPipe())
-    Login(@Body() customer_info: CustomerDTO): object{
-        return this.customerService.Login(customer_info);
-    }
 
   // * Feature 7 : View Customer Profile
   @Get('/profile/:id')
@@ -107,18 +124,73 @@ signIn(@Body() data:CustomerDTO){
   }
 
   // * Feature 8 : View Customer Images
+
   @Get('getimagebycustomerid/:customerId')
+  @UseGuards(SessionGuard)
 async getimagebyid(@Param('customerId', ParseIntPipe) customerId:number, @Res() res){
     const filename = await this.customerService.getimagebycustomerid(customerId);
-    res.sendFile(filename, { root: './uploads' })
+    res.sendFile(filename, { root: './uploads/customer_register_img' })
 
 }
+@Get('/showprofilepicture1')
+@UseGuards(SessionGuard)
+showProfileDetailss(@Session() session) {
+return this.customerService.showProfileDetailss(session.CustomerID);
+}
+
+@Get('/showprofilepicture')
+    @UseGuards(SessionGuard)
+async getimagebyassignproductidd(@Param('customerId')customerId, @Session() session, @Res() res){
+        const filename = session.profilePic;
+        res.sendFile(filename, { root: './uploads/customer_register_img' });
+        // return this.customerService.getimagebyassignproductidd(customerId);
+    }
+
 
  // * Feature 8 : Logout
  @Post('/logout/:id')
+ @UseGuards(SessionGuard)
  Logout(@Param('id', ParseIntPipe) id:number): object{
      return this.customerService.Logout(id);
  }
+
+
+
+// .....................Customer Address Manage .....................
+
+// * Feature 1 : Add a new address
+
+
+// @Post('/add_address')
+// @UsePipes(new ValidationPipe())
+// addAddress(@Body() data:CustomerDTO):object {
+// console.log(data);
+// return this.customerService.addAddress(data);
+// }
+
+
+
+
+
+
+
+@Post('/add_address/:id')
+async createAddress(@Param('id', ParseIntPipe) data: { customer: CustomerEntity, address: AddressEntity }): Promise<CustomerEntity> {
+  const { customer, address } = data;
+  return this.customerService.createAddress(customer, address);
+}
+
+// @Get('/getaddress/:id')
+//   async getUserWithProfile(@Param('id') id: number): Promise<CustomerEntity> {
+//     return this.customerService.getUserWithProfile(id);
+//   }
+
+// // * Feature 2 : Update address Info
+// @Put('/update_address_info/:id')
+// @UsePipes(new ValidationPipe())
+// UpdateAddressInfo(@Param('id', ParseIntPipe) id:number, @Body() updated_data:CustomerDTO): object{
+//     return this.customerService.UpdateAddressInfo(id,updated_data);
+// }
 
 
 
@@ -379,6 +451,30 @@ DeleteOrder(@Param('id', ParseIntPipe) id:number): object{
 // deleteOrder(@Param('customerId',  ParseIntPipe) customerId:number): object{
 //     return this.customerService.deleteOrder(customerId);
 // }
+
+//   // Search Order
+//   @Get('/searchorder/:orderID')
+// //   @UseGuards(SessionGuard)
+//   async searchOrder(@Param('orderID') orderID:string) {
+//       return await this.customerService.searchOrder(orderID);
+//   }
+
+//   @Get('/getorders/:customerId')
+// getOrders(@Param('customerId', ParseIntPipe) customerId:number) {
+       
+//         return this.customerService.getOrders(customerId);
+//     }
+
+
+
+
+
+//  // Add to Cart
+//  @Get('/addtocart')
+//  @UseGuards(SessionGuard)
+//  async addToCart(@Session() session, @Query() query:editProductDTO,@Body() order: OrderDTO) {
+//      return await this.customerService.addToCart(session.memberID, query, order);
+//  }
 
 
 

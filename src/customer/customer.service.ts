@@ -1,5 +1,5 @@
-import { Injectable } from "@nestjs/common";
-import { CustomerDTO, CustomerUpdateDTO, CustomerLoginDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewUpdateDTO, ReviewDTO, AssignProductDTO, CustomersDTO } from "./customer.dto";
+import { HttpStatus, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { CustomerDTO, CustomerUpdateDTO, CustomerLoginDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewUpdateDTO, ReviewDTO, AssignProductDTO, CustomerPicDTO, editProductDTO } from "./customer.dto";
 // import { ReviewDTO } from "./review.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -9,6 +9,10 @@ import { Order } from "src/order/Order.entity";
 import * as bcrypt from 'bcrypt';
 import { ProductEntity } from "src/admin/admin.entity";
 import { ProductDTO } from "src/admin/admin.dto";
+import { AddressEntity } from "./customer_address.entity";
+import { OrderDTO } from "src/order/order.dto";
+import { existsSync } from "fs";
+import { join } from "path";
 
 
 @Injectable()
@@ -29,8 +33,8 @@ export class CustomerService{
     @InjectRepository(DeliveryMan_Review)
         private DeliveryMan_ReviewRepo: Repository<DeliveryMan_Review>,
 
-        // @InjectRepository(AddressEntity)
-        // private AddressRepo: Repository<AddressEntity>,
+        @InjectRepository(AddressEntity)
+        private AddressRepo: Repository<AddressEntity>,
 
     @InjectRepository(ProductReview)
        private ProductReviewRepo: Repository<ProductReview>
@@ -40,7 +44,7 @@ export class CustomerService{
     geCustomerId(id:number): Promise<CustomerEntity>
      {
         console.log(id);
-       return this.customerRepo.findOneBy({id:id});
+       return this.customerRepo.findOneBy({customerid:id});
     }
 
 
@@ -50,7 +54,7 @@ export class CustomerService{
     }
     
     getCustomerName(mydata: CustomerDTO): string{
-        return mydata.name;
+        return mydata.username;
         }
 
     // addCustomer(data: CustomerDTO): object
@@ -61,78 +65,94 @@ export class CustomerService{
 
 // .....................Customer Profile Manage .....................//
 // * Feature 1 : Register a new customer
-    async register(data: CustomerDTO): Promise<CustomerEntity> {
-        return this.customerRepo.save(data);
-    }
+ async registerCustomer(data: CustomerDTO): Promise<CustomerEntity> {
+    const salt = await bcrypt.genSalt();
+    data.password = await bcrypt.hash(data.password, salt);
+    return await this.customerRepo.save(data);
+}
+// * Feature 2 : Login customer profile
 
-// * Feature 2 : Update customer profile
-    updateprofile(data: CustomerUpdateDTO): object
-    {
-        console.log(data.id);
-        console.log(data.name);
-        return data;
+async login(query:CustomerLoginDTO)
+{
+    const email = query.email;
+    const password = query.password;
+    const CustomerDetails = await this.customerRepo.findOneBy({ email : email });        
+    if (CustomerDetails === null) {
+        throw new NotFoundException({
+            status: HttpStatus.NOT_FOUND,
+            message: "Member not found"
+        })
+    } else {
+        if (await bcrypt.compare(password, CustomerDetails.password)) {
+            return CustomerDetails;
+        } else {
+            throw new UnauthorizedException({
+                status: HttpStatus.UNAUTHORIZED,
+                message: "Password does not match"
+            })
+        }
     }
-    // * Feature 3 : Update customer profile by id
+}
+// * Feature 3 : Update customer profile
+
+    async updateprofile(data: CustomerUpdateDTO): Promise<CustomerEntity> {
+        const { customerid, ...updateData } = data;
+        // Find the customer profile that we want to update
+        const customer = await this.customerRepo.findOneBy({ customerid });
+        if (!customer) {
+          throw new NotFoundException('Customer not found');
+        }
+        // Update the customer's profile with the provided data
+        Object.assign(customer, updateData);
+        // Save the updated customer entity
+        const updatedCustomer = await this.customerRepo.save(customer);
+        return updatedCustomer;
+      }
+    
+// * Feature 4 : Update customer profile by id
    
     async UpdateProfileInfo(id: number, updated_data: CustomerUpdateDTO): Promise<CustomerEntity> {
         await this.customerRepo.update(id, updated_data); // Where to Update , Updated Data
-        return this.customerRepo.findOneBy({id: id});
+        return this.customerRepo.findOneBy({customerid: id});
     }
 
-// * Feature 4 : Delete customer profile by id
+// * Feature 5 : Delete customer profile by id
     DeleteAccount(id: number): any {
         this.customerRepo.delete(id);
         return {"Success":"Account Deleted Successfully"};
     }
 
-// * Feature 5 : Signup customer profile
-    async signup(data: CustomerDTO): Promise<CustomerEntity> {
-        const salt = await bcrypt.genSalt();
-        data.password = await bcrypt.hash(data.password,salt);
-       return this.customerRepo.save(data);
-    }
- // Feature 6 : Login customer profile
-    async signIn(data: CustomerLoginDTO) {
-    const userdata= await this.customerRepo.findOneBy({email:data.email});
-    const match:boolean = await bcrypt.compare(data.password, userdata.password);
-    return match;
-
+// * Feature 6: View Customer Profile
+    async ViewCustomerProfile(id: number): Promise<CustomerEntity> {
+        return this.customerRepo.findOneBy({customerid: id});
 }
-
-async Login(customer_info: CustomerDTO): Promise<any> {
-        
-    const customer = await this.customerRepo.findOneBy({email: customer_info.email});
-    const match : boolean = await bcrypt.compare(customer_info.password, customer.password);
-    if (match) {
-        return customer;
-    }
-    return "Email or Password is incorrect";
+//Now Run this Query in Postman
+    async showProfileDetails(CustomerID) {
+        return await this.customerRepo.findOneBy({ customerid : CustomerID });
 }
-
-
-// * Feature 7: View Customer Profile
-async ViewCustomerProfile(id: number): Promise<CustomerEntity> {
-    return this.customerRepo.findOneBy({id: id});
-}
-
-// // * Feature 8: Logout
-//     async logout(data: CustomerDTO): Promise<CustomerEntity> {
-//         return this.customerRepo.save(data);
-//     }
-
-
 // * Feature 8 : View Customer Images
-async getimagebycustomerid(customerId:number) {
-    const mydata:CustomerDTO =await this.customerRepo.findOneBy({ id:customerId});
-    console.log(mydata);
-    return  mydata.filenames;
-        }
+//Now Run this Query in Postman
+    async getimagebycustomerid(customerId:number) {
+        const mydata:CustomerPicDTO =await this.customerRepo.findOneBy({ customerid:customerId});
+        console.log(mydata);
+        return  mydata.profilePic;
+    }
+// Now Stop
+    // async getimagebyassignproductidd(customerId:number): Promise<any> {
+    //         const mydata:CustomerPicDTO =await this.customerRepo.findOneBy({ customerid:customerId});
+    //         console.log(mydata);
+    //         return  mydata.profilePic;
+    // }
 
-
+    async showProfileDetailss(customerid) {
+        const mydata:CustomerPicDTO =await this.customerRepo.findOneBy({ customerid:customerid});
+        console.log(mydata);
+        return  mydata.profilePic;
+    }
 
 // * Feature 9: Logout
 async Logout(id: number): Promise<any> {
-    const currentSeller = this.customerRepo.findOneBy({id: id});
+    const currentSeller = this.customerRepo.findOneBy({customerid: id});
     if(currentSeller){
         // TODO: Destroy Session
         return "Logout Successfully";
@@ -150,15 +170,27 @@ async ForgotPassword(data: CustomerDTO): Promise<CustomerEntity> {
 //     return this.AddressRepo.save(data);
 // }
 
-// async createUser(user: CustomerEntity, userProfile: AddressEntity): Promise<CustomerEntity> {
-//     userProfile.user = user; //assign user object to UserProfile object 
-//     await this.userProfileRepository.save(userProfile);
-//     return this.userRepository.save(user);
-//     }
+// Feature 10 : Customer Add Address
+async createAddress(customer: CustomerEntity, address: AddressEntity): Promise<CustomerEntity> {
+    address.customer = customer; //assign customer object to address object 
+    await this.AddressRepo.save(address);
+    return this.customerRepo.save(customer);
+    }
 
+// Feature 11 : Customer Update Address
+async UpdateAddressInfo(id:number, updated_data: AddressEntity): Promise<AddressEntity> {
+    await this.AddressRepo.update(id, updated_data); // Where to Update , Updated Data
+    return this.AddressRepo.findOneBy({id: id});
+}
+
+    
 
 
   
+
+
+
+
 
     // .....................Customer Product Review Manage .....................//
    
@@ -176,10 +208,6 @@ async ForgotPassword(data: CustomerDTO): Promise<CustomerEntity> {
     async addreviews(review): Promise<ProductReview> {
         return this.ProductReviewRepo.save(review);
 }
-
-
-
-
 // * Feature 2 : Update customer review
 async UpdatereviewInfo(id:number, updated_data: ReviewDTO): Promise<ProductReview> {    
     await this.ProductReviewRepo.update(id, updated_data); // Where to Update , Updated Data
@@ -191,7 +219,6 @@ async UpdatereviewInfo(id:number, updated_data: ReviewDTO): Promise<ProductRevie
         this.ProductReviewRepo.delete(id);
         return {"Success":"Review Deleted Successfully"};
     }
-
  // .....................Customer Assign_Product Manage .....................//
 
     // * Feature 1 :  customer assignproduct
@@ -241,7 +268,7 @@ async getimagebyassignproductidandallinfo(assignproductId:number) {
 
         async getassignproductbycustomerid(id):Promise<CustomerEntity[]>{
         return this.customerRepo.find({
-            where:{id:id},
+            where:{customerid:id},
             relations: {
                 Assign_Product: true,
             },
@@ -330,7 +357,7 @@ DeleteDeliveryManReviewInfo(id: number): any {
     async getOrders(id):Promise<CustomerEntity[]>
     {
         return this.customerRepo.find({
-            where:{id:id},
+            where:{customerid:id},
             relations: {
                 orders: true,
             },
@@ -341,7 +368,7 @@ DeleteDeliveryManReviewInfo(id: number): any {
 
     async getOrderssByCustomer(customerid: number): Promise<CustomerEntity[]> {
         return this.customerRepo.find({
-            where: { id: customerid },
+            where: { customerid: customerid },
             relations:
              {
                 orders: true,
@@ -357,7 +384,7 @@ DeleteDeliveryManReviewInfo(id: number): any {
 
 
         async deleteOrder(orderId: number, customerId: number) {
-            await this.orderRepo.delete({ id: orderId, customer: { id: customerId } });
+            await this.orderRepo.delete({ id: orderId, customer: { customerid: customerId } });
           }
 
 
@@ -414,5 +441,43 @@ DeleteDeliveryManReviewInfo(id: number): any {
         //     const salt = await bcrypt.genSalt();
         //    return this.ProductsRepo.save(data);
         // }
+
+
+
+        
+    // async getUserWithProfile(id: number): Promise<CustomerEntity> {
+    //     return this.customerRepo.findOneBy(id, { relations: ['address'] });
+    //     }
+
+
+
+    // async searchOrder(orderID) {
+    //     const orders = await this.orderRepo.findOneBy( { id: orderID } );
+    //                 return (`
+    //                 --------------------------------------------------
+    //                 Order ID: ${orders.id}
+    //                 Customer ID: ${orders.customer}
+    //                 Order productName: ${orders.productName}
+    //                 Order ProductReview: ${orders.ProductReview}
+    //                 --------------------------------------------------
+    //                 `);
+
+    // }     
+        
+    // async addToCart(customerID, query: editProductDTO, order: OrderDTO) {
+    //     const editProduct = query.editProduct;
+    //     const product = await this.ProductsRepo.findOneBy({ id: editProduct });
+    //     const member = await this.customerRepo.findOneBy(customerID);
+    //     // order.customer = customerID;
+    //     const now = new Date();
+    //     const date = now.getDate();
+    //     const month = now.getMonth();
+    //     const year = now.getFullYear();
+    //     order.orderDate = `${date}/${month}/${year}`;
+    //     order.orderStatus = "Pending";
+    //     order.products = product.Product_Name;
+    //     order.totalAmount = product.Price;
+    //     return this.orderRepo.save(order);
+    // }
 
 }

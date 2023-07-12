@@ -65,16 +65,13 @@ async register(data: AdminDTO): Promise<AdminEntity> {
     return this.AdminRepo.save(data);
 }
 
-      getCustomerName(mydata: CustomerDTO): string{
-        return mydata.name;
-    }
 
    // Feature 2 : Search Customer by id
    
 
        getCustomerById(id:CustomerDTO, mydata:CustomerDTO): object {
         if(mydata != null)
-            if(mydata.id == id.id)
+            if(mydata.customerid == id.customerid)
                 return mydata;
             else 
                 return ({message: "Customer not found"})
@@ -83,13 +80,13 @@ async register(data: AdminDTO): Promise<AdminEntity> {
     geCustomerId(id:number): Promise<CustomerEntity>
      {
         console.log(id);
-       return this.customerRepo.findOneBy({id:id});
+       return this.customerRepo.findOneBy({customerid:id});
     }
 
     // Feature 3 : Customer Profile Update
     async UpdateProfileInfo(id: number, updated_data: CustomerUpdateDTO): Promise<CustomerEntity> {
         await this.customerRepo.update(id, updated_data); // Where to Update , Updated Data
-        return this.customerRepo.findOneBy({id: id});
+        return this.customerRepo.findOneBy({customerid: id});
     }
 
     // Feature 4 : Delete Customer Profile by id
@@ -98,9 +95,6 @@ async register(data: AdminDTO): Promise<AdminEntity> {
         this.customerRepo.delete(id);
         return {"Success":"Account Deleted Successfully"};
     }
-
-
-
 
 
     // Feature 5 : Add Product

@@ -6,15 +6,34 @@ import { AddressEntity } from "./customer_address.entity";
 @Entity("CustomerAdd")
 export class CustomerEntity{
 @PrimaryGeneratedColumn()
-id: number;
-@Column()
-name: string;
-@Column()
+customerid: number;
+@Column( { name: 'first_name', type: 'varchar', length: 200 } )
+firstName: string;
+
+@Column( { name: 'last_name', type: 'varchar', length: 200 } )
+lastName: string;
+@Column( { name: 'username', type: 'varchar', length: 200 } )
+username: string;
+@Column( { name: 'date_of_birth', type: 'date'} )
+dateOfBirth: Date;
+
+@Column( { name: 'telephone_number', type: 'varchar', length: 200 } )
+telephoneNumber: string;
+
+@Column( { name: 'email', type: 'varchar', length: 200 } )
 email: string;
-@Column()
+
+@Column( { name: 'password', type: 'varchar', length: 200 } )
 password: string;
-@Column()
-filenames: string;
+@Column ( { name: 'profilePic', type: 'varchar', length: 255 } )
+profilePic: string;
+
+
+
+
+
+
+
 // @OneToOne(() => AddressEntity, (address) => address.customer)
 @OneToMany(() => Order, (order) => order.customer)
 orders: Order[];
