@@ -1,14 +1,14 @@
+import { ProductReview } from "src/customer/customer.entity";
+import { Order } from "src/order/Order.entity";
 import { SupplierEntity } from "src/supplier/Supplier.entity";
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, ManyToOne, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
 
 
 @Entity("Admin")
 export class AdminEntity{
-@PrimaryGeneratedColumn()
-id: number;
 @Column()
 name: string;
-@Column()
+@PrimaryColumn()
 email: string;
 @Column()
 password: string;
@@ -34,6 +34,12 @@ Quantity: number;
 Product_Category: string;
 @ManyToOne(() => SupplierEntity, (Supplier) => Supplier.Product)
 Supplier: SupplierEntity;
+@OneToMany(() => Order, (order) => order.products)
+orders: Order[];
+@OneToMany(() => ProductReview, (ProductReview) => ProductReview.products)
+ProductReview: ProductReview[];
+
+
 }
 
 

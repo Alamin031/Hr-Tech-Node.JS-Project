@@ -1,5 +1,5 @@
 import { HttpStatus, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
-import { CustomerDTO, CustomerUpdateDTO, CustomerLoginDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewUpdateDTO, ReviewDTO, AssignProductDTO, CustomerPicDTO, editProductDTO } from "./customer.dto";
+import { CustomerDTO, CustomerUpdateDTO, CustomerLoginDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewUpdateDTO, ReviewDTO, AssignProductDTO, CustomerPicDTO, editProductDTO, AddAddressDTO } from "./customer.dto";
 // import { ReviewDTO } from "./review.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -39,53 +39,33 @@ export class CustomerService{
     @InjectRepository(ProductReview)
        private ProductReviewRepo: Repository<ProductReview>
     ){}
-    
-
-    geCustomerId(id:number): Promise<CustomerEntity>
-     {
-        console.log(id);
-       return this.customerRepo.findOneBy({customerid:id});
-    }
-
-
-
-    getIndex(): string{
-        return "Hellow HR";
-    }
-    
-    getCustomerName(mydata: CustomerDTO): string{
-        return mydata.username;
-        }
-
-    // addCustomer(data: CustomerDTO): object
-    // {
-    //     return data;
-    // }
 
 
 // .....................Customer Profile Manage .....................//
 // * Feature 1 : Register a new customer
- async registerCustomer(data: CustomerDTO): Promise<CustomerEntity> {
+   async registerCustomer(data: CustomerDTO): Promise<CustomerEntity> {
     const salt = await bcrypt.genSalt();
     data.password = await bcrypt.hash(data.password, salt);
     return await this.customerRepo.save(data);
 }
 // * Feature 2 : Login customer profile
 
-async login(query:CustomerLoginDTO)
-{
-    const email = query.email;
-    const password = query.password;
-    const CustomerDetails = await this.customerRepo.findOneBy({ email : email });        
-    if (CustomerDetails === null) {
-        throw new NotFoundException({
+    async login(query:CustomerLoginDTO){
+        const email = query.email;
+        const password = query.password;
+        const CustomerDetails = await this.customerRepo.findOneBy({ email : email });
+        
+        if (CustomerDetails === null) {
+            throw new NotFoundException
+            ({
             status: HttpStatus.NOT_FOUND,
             message: "Member not found"
-        })
-    } else {
-        if (await bcrypt.compare(password, CustomerDetails.password)) {
+        })}
+        else {
+            if (await bcrypt.compare(password, CustomerDetails.password)) {
             return CustomerDetails;
-        } else {
+        } 
+        else {
             throw new UnauthorizedException({
                 status: HttpStatus.UNAUTHORIZED,
                 message: "Password does not match"
@@ -95,28 +75,16 @@ async login(query:CustomerLoginDTO)
 }
 // * Feature 3 : Update customer profile
 
-    async updateprofile(data: CustomerUpdateDTO): Promise<CustomerEntity> {
-        const { customerid, ...updateData } = data;
-        // Find the customer profile that we want to update
-        const customer = await this.customerRepo.findOneBy({ customerid });
-        if (!customer) {
-          throw new NotFoundException('Customer not found');
-        }
-        // Update the customer's profile with the provided data
-        Object.assign(customer, updateData);
-        // Save the updated customer entity
-        const updatedCustomer = await this.customerRepo.save(customer);
-        return updatedCustomer;
-      }
-    
-// * Feature 4 : Update customer profile by id
-   
-    async UpdateProfileInfo(id: number, updated_data: CustomerUpdateDTO): Promise<CustomerEntity> {
-        await this.customerRepo.update(id, updated_data); // Where to Update , Updated Data
-        return this.customerRepo.findOneBy({customerid: id});
-    }
 
-// * Feature 5 : Delete customer profile by id
+async UpdateProfileInfo(id: number, updated_data: CustomerUpdateDTO): Promise<CustomerEntity> {
+    await this.customerRepo.update(id, updated_data); // Where to Update , Updated Data
+    return this.customerRepo.findOneBy({customerid: id});
+}
+
+
+
+
+// * Feature 5 : Delete customer profile 
     DeleteAccount(id: number): any {
         this.customerRepo.delete(id);
         return {"Success":"Account Deleted Successfully"};
@@ -130,7 +98,9 @@ async login(query:CustomerLoginDTO)
     async showProfileDetails(CustomerID) {
         return await this.customerRepo.findOneBy({ customerid : CustomerID });
 }
-// * Feature 8 : View Customer Images
+
+
+// * Feature 7 : View Customer Images
 //Now Run this Query in Postman
     async getimagebycustomerid(customerId:number) {
         const mydata:CustomerPicDTO =await this.customerRepo.findOneBy({ customerid:customerId});
@@ -150,25 +120,21 @@ async login(query:CustomerLoginDTO)
         return  mydata.profilePic;
     }
 
-// * Feature 9: Logout
-async Logout(id: number): Promise<any> {
-    const currentSeller = this.customerRepo.findOneBy({customerid: id});
-    if(currentSeller){
-        // TODO: Destroy Session
+// * Feature 8: Logout
+    async Logout(id: number): Promise<any> {
+        const currentSeller = this.customerRepo.findOneBy({customerid: id});
+        if(currentSeller){
+        // Destroy Session
         return "Logout Successfully";
-    }else{
+    }
+    else{
         return "Logout Failed";
     }
 }
 // * Feature 9: Forgot Password
-async ForgotPassword(data: CustomerDTO): Promise<CustomerEntity> {
-    return this.customerRepo.save(data);
+    async ForgotPassword(data: CustomerDTO): Promise<CustomerEntity> {
+        return this.customerRepo.save(data);
 }
-
-// // * Feature 10: Customer Add Address
-// async AddAddress(data: AddressEntity): Promise<AddressEntity> {
-//     return this.AddressRepo.save(data);
-// }
 
 // Feature 10 : Customer Add Address
 async createAddress(customer: CustomerEntity, address: AddressEntity): Promise<CustomerEntity> {
@@ -183,18 +149,26 @@ async UpdateAddressInfo(id:number, updated_data: AddressEntity): Promise<Address
     return this.AddressRepo.findOneBy({id: id});
 }
 
-    
+
+// async AddAddress(data: AddressEntity): Promise<AddressEntity> {
+//     return this.AddressRepo.save(data);
+// }
+
+ // async AddAddress(id: number, address_info: AddAddressDTO): Promise<AddressEntity> {
+    //     return this.AddressRepo.save(address_info);
+    // }
 
 
-  
+// Feature 12 : Customer Delete Address
+DeleteAddressInfo(id: number): any {
+    this.AddressRepo.delete(id);
+    return {"Success":"Address Deleted Successfully"};
+}
 
 
-
-
-
-    // .....................Customer Product Review Manage .....................//
+// .....................Customer Product Review Manage .....................//
    
-// * Feature 1 : Add a Receive Product Review
+// * Feature 13 : Add a Receive Product Review
 
 //1 nd way
     async ProductReview(id:number,review_info: ReviewDTO) : Promise<ProductReview> {
@@ -208,39 +182,93 @@ async UpdateAddressInfo(id:number, updated_data: AddressEntity): Promise<Address
     async addreviews(review): Promise<ProductReview> {
         return this.ProductReviewRepo.save(review);
 }
-// * Feature 2 : Update customer review
+// * Feature 14 : Update customer review
 async UpdatereviewInfo(id:number, updated_data: ReviewDTO): Promise<ProductReview> {    
     await this.ProductReviewRepo.update(id, updated_data); // Where to Update , Updated Data
       return this.ProductReviewRepo.findOneBy({id: id});
     }
 
-// * Feature 3 : Delete review Info
+    // Feature 16 : view review by id
+    async ViewReviewInfo(id: number): Promise<ProductReview> {
+        return this.ProductReviewRepo.findOneBy({id: id});
+    }
+
+// * Feature 15 : Delete review Info
     DeletereviewInfo(id: number): any {
         this.ProductReviewRepo.delete(id);
         return {"Success":"Review Deleted Successfully"};
     }
+
+// * Feature 16 : View  Review Info
+    async getreviews(customerid):Promise<CustomerEntity[]> {
+        console.log(customerid);
+        return this.customerRepo.find({
+            where:{customerid:customerid},
+            relations: {
+                ProductReview: true,
+            },
+        });                 
+    }
+  
+
+    // Feature 17 : View  Review By Product Id
+    async getreviewbyproductid(productid):Promise<ProductEntity[]> {
+        console.log(productid);
+        return this.ProductsRepo.find({
+            where:{id:productid},
+            relations: {
+                ProductReview: true,
+            },
+        });
+    }
+
+
+
+   
+    
+
+
+
+
  // .....................Customer Assign_Product Manage .....................//
 
-    // * Feature 1 :  customer assignproduct
+    // * Feature 16 :  customer assignproduct
     async assignproduct(data: AssignProductDTO): Promise<Assign_Product> {
         const salt = await bcrypt.genSalt();
        return this.assignproductRepo.save(data);
     }
  
 
-// Feature 2 : Update Assign_Product Info
+// Feature 17 : Update Assign_Product Info
 async UpdateAssignProductInfo(id:number, updated_data: AssignProductDTO): Promise<Assign_Product> {
     await this.assignproductRepo.update(id, updated_data); // Where to Update , Updated Data
     return this.assignproductRepo.findOneBy({id: id});
 }
 
-// Feature 3 : Delete Assign_Product Info
+// // Feature 17 : Update Assign_Product Info
+// async UpdateAssignProductInfo(id:number, updated_data: AssignProductDTO): Promise<Assign_Product> {
+//     await this.assignproductRepo.update(id, updated_data); // Where to Update , Updated Data
+//     return this.assignproductRepo.findOneBy({id: id});
+// }
+
+// Feature 18 : Delete Assign_Product Info
 DeleteAssignProductInfo(id: number): any {
     this.assignproductRepo.delete(id);
     return {"Success":"Assign_Product Deleted Successfully"};
 }
 
-// Feature 4 : View Assign_Product Info
+  // * Feature 17 : veiw assign product by customer id
+  async getproblemsProduct(customerid):Promise<CustomerEntity[]> {
+    console.log(customerid);
+    return this.customerRepo.find({
+        where:{customerid:customerid},
+        relations: {
+            Assign_Product: true,
+        },
+    });
+}
+
+// Feature 19 : View Assign_Product Info
 async ViewAssignProductInfo(id: number): Promise<Assign_Product> {
     return this.assignproductRepo.findOneBy({id: id});
 }
@@ -250,21 +278,21 @@ async ViewAssignProductInfo(id: number): Promise<Assign_Product> {
 //     return this.assignproductRepo.findAll();
 // }
 
-// Feature 6 : View Assign_Product Images
+// Feature 20 : View Assign_Product Images
 async getimagebyassignproductid(assignproductId:number) {
     const mydata:AssignProductDTO =await this.assignproductRepo.findOneBy({ id:assignproductId});
     console.log(mydata);
     return  mydata.Pic;
         }
 
-        // Feature 6 : View Assign_Product Images And All Info
-async getimagebyassignproductidandallinfo(assignproductId:number) {
+// Feature 21 : View Assign_Product Images And All Info
+    async getimagebyassignproductidandallinfo(assignproductId:number) {
     const mydata:AssignProductDTO =await this.assignproductRepo.findOneBy({ id:assignproductId});
     console.log(mydata);
     return  mydata;
         }
 
-      // Feature 7 : Who Customer add Assign_Product
+// Feature 22 : Who Customer add Assign_Product
 
         async getassignproductbycustomerid(id):Promise<CustomerEntity[]>{
         return this.customerRepo.find({
@@ -272,12 +300,15 @@ async getimagebyassignproductidandallinfo(assignproductId:number) {
             relations: {
                 Assign_Product: true,
             },
-        });                 
+            
+        }); 
+        
+                
     } 
 
     // .....................Customer product  Manage .....................//
 
-// * Feature 1 : find all product
+// * Feature 23 : find all product
 async findAll(): Promise<ProductEntity[]> {
     return this.ProductsRepo.find();
 }
@@ -289,22 +320,55 @@ async ViewAllProductInfo(): Promise<ProductEntity[]> {
 
 
     // .....................Customer DeliveryMan Review Manage .....................//
-// * Feature 1 : Add a customer DeliveryMan Review
+
+// * Feature 24 : Add a customer DeliveryMan Review
     async adddeliverymanreview(data: DRevieweDTO): Promise<DeliveryMan_Review> {
         return this.DeliveryMan_ReviewRepo.save(data);
     }
 
-// * Feature 2 : Update customer DeliveryMan Review
+// * Feature 25 : Update customer DeliveryMan Review
 async UpdateDeliveryManReviewInfo(id:number, updated_data: DRevieweDTO): Promise<DeliveryMan_Review> {
     await this.DeliveryMan_ReviewRepo.update(id, updated_data); // Where to Update , Updated Data
     return this.DeliveryMan_ReviewRepo.findOneBy({id: id});
 }
 
-// * Feature 3 : Delete DeliveryMan Review Info
+// * Feature 26 : Delete DeliveryMan Review Info
 DeleteDeliveryManReviewInfo(id: number): any {
     this.DeliveryMan_ReviewRepo.delete(id);
     return {"Success":"DeliveryMan Review Deleted Successfully"};
 }
+
+
+async addOrders(order): Promise<Order> {
+    return this.orderRepo.save(order);
+}
+
+
+
+async getOrders(customerid):Promise<CustomerEntity[]> {
+    console.log(customerid);
+
+    return this.customerRepo.find({
+        where:{customerid:customerid},
+        relations: {
+            orders: true,
+        },
+    });                 
+}
+
+
+
+DeleteOrder(id: number): any {
+    this.orderRepo.delete(id);
+    return {"Success":"Your Oeder Remove Successfully"};
+}
+
+
+
+    async deleteOrder(orderId: number, customerId: number) {
+        await this.orderRepo.delete({ id: orderId, customer: { customerid: customerId } });
+      }
+
 
 
 
@@ -349,44 +413,7 @@ DeleteDeliveryManReviewInfo(id: number): any {
 
 
 
-    async addOrders(order): Promise<Order> {
-        return this.orderRepo.save(order);
-    }
-
-    
-    async getOrders(id):Promise<CustomerEntity[]>
-    {
-        return this.customerRepo.find({
-            where:{customerid:id},
-            relations: {
-                orders: true,
-            },
-        });                 
-    } 
-
-
-
-    async getOrderssByCustomer(customerid: number): Promise<CustomerEntity[]> {
-        return this.customerRepo.find({
-            where: { customerid: customerid },
-            relations:
-             {
-                orders: true,
-            },
-        });
-    }
-
-    DeleteOrder(id: number): any {
-        this.orderRepo.delete(id);
-        return {"Success":"Your Oeder Remove Successfully"};
-    }
-    
-
-
-        async deleteOrder(orderId: number, customerId: number) {
-            await this.orderRepo.delete({ id: orderId, customer: { customerid: customerId } });
-          }
-
+   
 
 
         //   async UpdateBookInfo(b_id:number, updated_data: BookDTO): Promise<BookEntity> {
@@ -427,7 +454,7 @@ DeleteDeliveryManReviewInfo(id: number): any {
 
 
         // async searchOrdersByCustomerId(customerId: number) {
-        //     const customer = await this.customerRepository.findOne(customerId, {
+        //     const customer = await this.customerRepo.findOne(customerId, {
         //     relations: ["orders"],
         //     });
             
@@ -437,6 +464,8 @@ DeleteDeliveryManReviewInfo(id: number): any {
             
         //     return customer.orders;
         //     }
+
+
         // async productadd(data: ProductDTO): Promise<ProductEntity> {
         //     const salt = await bcrypt.genSalt();
         //    return this.ProductsRepo.save(data);
@@ -448,21 +477,7 @@ DeleteDeliveryManReviewInfo(id: number): any {
     // async getUserWithProfile(id: number): Promise<CustomerEntity> {
     //     return this.customerRepo.findOneBy(id, { relations: ['address'] });
     //     }
-
-
-
-    // async searchOrder(orderID) {
-    //     const orders = await this.orderRepo.findOneBy( { id: orderID } );
-    //                 return (`
-    //                 --------------------------------------------------
-    //                 Order ID: ${orders.id}
-    //                 Customer ID: ${orders.customer}
-    //                 Order productName: ${orders.productName}
-    //                 Order ProductReview: ${orders.ProductReview}
-    //                 --------------------------------------------------
-    //                 `);
-
-    // }     
+   
         
     // async addToCart(customerID, query: editProductDTO, order: OrderDTO) {
     //     const editProduct = query.editProduct;

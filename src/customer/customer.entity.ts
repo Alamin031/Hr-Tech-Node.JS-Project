@@ -1,6 +1,7 @@
 import {Order } from "src/order/Order.entity";
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { AddressEntity } from "./customer_address.entity";
+import { ProductEntity } from "src/admin/admin.entity";
 
 
 @Entity("CustomerAdd")
@@ -27,13 +28,6 @@ email: string;
 password: string;
 @Column ( { name: 'profilePic', type: 'varchar', length: 255 } )
 profilePic: string;
-
-
-
-
-
-
-
 // @OneToOne(() => AddressEntity, (address) => address.customer)
 @OneToMany(() => Order, (order) => order.customer)
 orders: Order[];
@@ -62,6 +56,8 @@ Date: string;
 customer: CustomerEntity;
 @ManyToOne(() => Order, (order) => order.ProductReview)
 order: Order;
+@ManyToOne(() => ProductEntity, (products) => products.ProductReview)
+products: ProductEntity;
 }
 
 @Entity("Customer_Assign_Product")

@@ -17,21 +17,8 @@ export class CustomerController{
    
 
     constructor(private readonly customerService: CustomerService){}
-    @Get('/index')
-    getIndex(): any {
-        return this.customerService.getIndex();
-    }
-
-    @Get('/search/:id')
-    geCustomerId(@Param('id', ParseIntPipe) id:number): any {
-        return this.customerService.geCustomerId(id);
-   }
-
-
-   @Get('/search')
-   getCustomerName(@Query() qry:CustomerDTO): string {
-    return this.customerService.getCustomerName(qry);
-}
+   
+  
 // .....................Customer Profile Manage .....................
 
 // * Feature 1 : Register a new customer
@@ -85,49 +72,32 @@ async login(@Query() query:CustomerDTO, @Session() session) {
    return "Login successfull";
 }
 
-// * Feature 8 : view customer profile
+// * Feature 3 : view customer profile
     @Get('/showprofiledetails')
     @UseGuards(SessionGuard)
     showProfileDetails(@Session() session) {
         return this.customerService.showProfileDetails(session.CustomerID);
 }
 
-// * Feature 2 : Update customer profile
-    @Put('/updateprofile')
-    @UseGuards(SessionGuard)
+// * Feature 4 : Update customer profile
+@Put('/update_profile_info')
+@UseGuards(SessionGuard)
     @UsePipes(new ValidationPipe())
-    updateprofile(@Body() data:CustomerUpdateDTO): object{
-        return this.customerService.updateprofile(data);
+    UpdateProfileInfo( @Session() session, @Body() updated_data:CustomerUpdateDTO): object{
+        return this.customerService.UpdateProfileInfo(session.CustomerID,updated_data);
+    }
+
+
+// * Feature 5 : Delete customer profile 
+@Delete('/DeleteAccount')
+@UseGuards(SessionGuard)
+    DeleteAccount(@Session() session) {
+     return this.customerService.DeleteAccount(session.CustomerID);
 }
-
-// * Feature 3 : Update customer profile by id
-@Put('/update_profile_info/:id')
-@UseGuards(SessionGuard)
-    @UsePipes(new ValidationPipe())
-    UpdateProfileInfo(@Param('id', ParseIntPipe) id:number, @Session() session, @Body() updated_data:CustomerUpdateDTO): object{
-        return this.customerService.UpdateProfileInfo(id,updated_data);
-    }
-
-
-// * Feature 4 : Delete customer profile by id
-@Delete('/delete_profile/:id')
-@UseGuards(SessionGuard)
-    DeleteAccount(@Param('id', ParseIntPipe) id:number): object{
-        return this.customerService.DeleteAccount(id);
-    }
-
-
-  // * Feature 7 : View Customer Profile
-  @Get('/profile/:id')
-  ViewCustomerProfile(@Param('id', ParseIntPipe) id:number): object{
-      return this.customerService.ViewCustomerProfile(id);
-  }
-
-  // * Feature 8 : View Customer Images
-
+// * Feature 8 : View Customer Images
   @Get('getimagebycustomerid/:customerId')
   @UseGuards(SessionGuard)
-async getimagebyid(@Param('customerId', ParseIntPipe) customerId:number, @Res() res){
+    async getimagebyid(@Param('customerId', ParseIntPipe) customerId:number, @Res() res){
     const filename = await this.customerService.getimagebycustomerid(customerId);
     res.sendFile(filename, { root: './uploads/customer_register_img' })
 
@@ -138,9 +108,10 @@ showProfileDetailss(@Session() session) {
 return this.customerService.showProfileDetailss(session.CustomerID);
 }
 
+//problem part
 @Get('/showprofilepicture')
     @UseGuards(SessionGuard)
-async getimagebyassignproductidd(@Param('customerId')customerId, @Session() session, @Res() res){
+     async getimagebyassignproductidd(@Param('customerId')customerId, @Session() session, @Res() res){
         const filename = session.profilePic;
         res.sendFile(filename, { root: './uploads/customer_register_img' });
         // return this.customerService.getimagebyassignproductidd(customerId);
@@ -159,8 +130,6 @@ async getimagebyassignproductidd(@Param('customerId')customerId, @Session() sess
 // .....................Customer Address Manage .....................
 
 // * Feature 1 : Add a new address
-
-
 // @Post('/add_address')
 // @UsePipes(new ValidationPipe())
 // addAddress(@Body() data:CustomerDTO):object {
@@ -168,17 +137,20 @@ async getimagebyassignproductidd(@Param('customerId')customerId, @Session() sess
 // return this.customerService.addAddress(data);
 // }
 
-
-
-
-
-
-
 @Post('/add_address/:id')
+// @UseGuards(SessionGuard)
 async createAddress(@Param('id', ParseIntPipe) data: { customer: CustomerEntity, address: AddressEntity }): Promise<CustomerEntity> {
   const { customer, address } = data;
   return this.customerService.createAddress(customer, address);
 }
+
+// * Feature 18 : Add Address                              sudu address add karanawa
+// @Post('/profile/add_address/:id')
+// @UsePipes(new ValidationPipe())
+// AddAddress(@Param('id', ParseIntPipe) id:number, @Body() address_info:AddAddressDTO): object{
+//     return this.customerService.AddAddress(id,address_info);
+// }
+
 
 // @Get('/getaddress/:id')
 //   async getUserWithProfile(@Param('id') id: number): Promise<CustomerEntity> {
@@ -196,38 +168,12 @@ async createAddress(@Param('id', ParseIntPipe) data: { customer: CustomerEntity,
 
 
     // .....................Customer Review Manage .....................//
-// * Feature 1 : Add a new review
-
-//    @Post('/add_review/:id')
-//     @UsePipes(new ValidationPipe())
-//     @UseInterceptors(FileInterceptor('myfile',
-//         { 
-//             fileFilter: (req, file, cb) => {
-//                 if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/))
-//                     cb(null, true);
-//                 else {
-//                     cb(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false);
-//                 }
-//             },
-//             limits: { fileSize: 5000000 }, // 5 MB
-//             storage:diskStorage({
-//                 destination: './uploads',
-//                 filename: function (req, file, cb) {
-//                     cb(null,Date.now()+file.originalname)
-//                 },
-//             })
-//         }
-//     ))
-//     ProductReview(@Param('id', ParseIntPipe) id:number,@Body() review_info: ReviewDTO, @UploadedFile() myfileobj: Express.Multer.File):object {
-//         review_info.Product_Image = myfileobj.filename; // Adding Book Image name to DTO to store in database
-//         return this.customerService.ProductReview(id, review_info);
-//     }
 
 @Post('/add_review')
 @UsePipes(new ValidationPipe())
-     addreview(@Body() data:ReviewDTO):object {
+ProductReview(@Session() session, @Body() data:ReviewDTO):object {
         console.log(data);
-        return this.customerService.addreview(data);
+        return this.customerService.ProductReview(session.CustomerID, data);
 }
 
 @Post('/addreviews')
@@ -247,6 +193,12 @@ UpdatereviewInfo(@Param('id', ParseIntPipe) id:number, @Body() updated_data:Revi
 @Delete('/delete_review/:id')
 DeletereviewInfo(@Param('id', ParseIntPipe) id:number): number{
     return this.customerService.DeletereviewInfo(id);
+}
+
+@Get('/getreviews')
+    @UseGuards(SessionGuard)
+    getreviews(@Session() session) {
+     return this.customerService.getreviews(session.CustomerID);
 }
 
 
@@ -279,12 +231,27 @@ mydata.Pic = imageobj.filename;
 return this.customerService.assignproduct(mydata);
 
 }
+
+@Get('/getproblemsProduct')
+    @UseGuards(SessionGuard)
+    getproblemsProduct(@Session() session) {
+     return this.customerService.getproblemsProduct(session.CustomerID);
+}
+
 // Feature 2 : Update Assign_Product Info
 @Put('/update_assign_product_info/:id')
 @UsePipes(new ValidationPipe())
 UpdateAssignProductInfo(@Param('id', ParseIntPipe) id:number, @Body() updated_data:AssignProductDTO): object{
     return this.customerService.UpdateAssignProductInfo(id,updated_data);
 }
+
+// // Feature 2 : Update Assign_Product Info
+// @Put('/update_assign_product_info/:id')
+// @UseGuards(SessionGuard)
+// @UsePipes(new ValidationPipe())
+// UpdateAssignProductInfo(@Session() session, @Body() updated_data:AssignProductDTO): object{
+//     return this.customerService.UpdateAssignProductInfo(session.CustomerID,updated_data);
+// }
 
 // Feature 3 : Delete Assign_Product Info
 @Delete('/delete_assign_product/:id')
@@ -299,7 +266,7 @@ ViewAssignProductInfo(@Param('id', ParseIntPipe) id:number): object{
 }
 
 // Feature 5 : View Assign_Product Images And All Info
-@Get('getimagebyassignproductid/:assignproductId')
+@Get('getimagebyassignprsoductid/:assignproductId')
 async getimagebyassignproductid(@Param('assignproductId', ParseIntPipe) assignproductId:number, @Res() res){
     const filename = await this.customerService.getimagebyassignproductid(assignproductId);
             res.sendFile(filename, { root: './uploads/assignproduct' })   
@@ -313,14 +280,21 @@ async getimagebyassignproductid(@Param('assignproductId', ParseIntPipe) assignpr
             // return filename;
         }
 
-        // Feature 7 : Who Customer add Assign_Product
+// Feature 7 : Who Customer add Assign_Product
         @Get('/getassignproductbycustomerid/:customerId')
         getassignproductbycustomerid(@Param('customerId', ParseIntPipe) customerId:number) {
             return this.customerService.getassignproductbycustomerid(customerId);
         }
 
+// Feature 17 : View  all Review By Product Id
+    @Get('/getreviewbyproductid/:productId')
+    getreviewbyproductid(@Param('productId', ParseIntPipe) productId:number) {
+        return this.customerService.getreviewbyproductid(productId);
+    }
 
-    // .....................Customer DeliveryMan Review Manage .....................//
+
+
+// .....................Customer DeliveryMan Review Manage .....................//
 // * Feature 1 : Add a customer DeliveryMan Review
 @Post('/add_deliveryman_review')
 @UsePipes(new ValidationPipe())
@@ -348,32 +322,6 @@ DeleteDeliveryManReviewInfo(@Param('id', ParseIntPipe) id:number): number{
 @Get('/view_all__product')
 ViewAllProductInfo(): object{
     return this.customerService.ViewAllProductInfo();
-}
-
-
-
-@Post(('/addreview1'))
-@UseInterceptors(FileInterceptor('myfile',
-{ fileFilter: (req, file, cb) => {
-    if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/))
-     cb(null, true);
-    else {
-    cb(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false);
-    }
-    },
-    limits: { fileSize: 30000 },
-    storage:diskStorage({
-    destination: './uploads',
-    filename: function (req, file, cb) {
-    cb(null,Date.now()+file.originalname)
-    },
-    })
-    }
-))
-uploadFile(@UploadedFile() myfileobj: Express.Multer.File):object
-{
- console.log(myfileobj)   
-return ({message:"file uploaded"});
 }
 
 @Get('/getimage/:name')
@@ -404,22 +352,6 @@ getImages(@Param('name') name, @Res() res) {
  dupdateReviewId(@Param() id:number,@Body() data:DRevieweUpdateDTO): object{
      return this.customerService.dupdateReviewId(id,data);
  }
-//  @Post('/addreviewd')
-// //  @UsePipes(new ValidationPipe())
-//  addreviewd(@Body() data:DRevieweDTO):object {
-//  console.log(data);
-//  return this.customerService.addreviewd(data);
-// }
-
-
-
-
-// @Get('/getorder/:customerid')
-// getManagers(@Param('adminid', ParseIntPipe) adminid:number) {
-   
-//     return this.adminService.getManager(adminid);
-// }
-
 
 @Post('/addorder')
 addOrders(@Body() order) {
@@ -427,12 +359,14 @@ addOrders(@Body() order) {
     return this.customerService.addOrders(order);
 }
 
+@Get('/getordersss')
+    @UseGuards(SessionGuard)
+    getOrders(@Session() session) {
+     return this.customerService.getOrders(session.CustomerID);
+}
 
-@Get('/getorders/:customerId')
-getOrders(@Param('customerId', ParseIntPipe) customerId:number) {
-       
-        return this.customerService.getOrders(customerId);
-    }
+ 
+
 
 
 // @Put('/updateorders')
@@ -452,12 +386,7 @@ DeleteOrder(@Param('id', ParseIntPipe) id:number): object{
 //     return this.customerService.deleteOrder(customerId);
 // }
 
-//   // Search Order
-//   @Get('/searchorder/:orderID')
-// //   @UseGuards(SessionGuard)
-//   async searchOrder(@Param('orderID') orderID:string) {
-//       return await this.customerService.searchOrder(orderID);
-//   }
+
 
 //   @Get('/getorders/:customerId')
 // getOrders(@Param('customerId', ParseIntPipe) customerId:number) {
@@ -478,11 +407,11 @@ DeleteOrder(@Param('id', ParseIntPipe) id:number): object{
 
 
 
-@Get('/getsearch/:customerid')
-getOrderssByCustomer(@Param('customerId', ParseIntPipe) customerId:number) {
+//     @Get('/getorders/:customerId')
+// getOrders(@Param('customerId', ParseIntPipe) customerId:number) {
        
-        return this.customerService.getOrderssByCustomer(customerId);
-    }
+//         return this.customerService.getOrders(customerId);
+//     }
 
 
 

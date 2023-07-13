@@ -1,72 +1,123 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, Request, Res, UploadedFile, UseInterceptors, UsePipes, ValidationPipe } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, Request, Res, Session, UploadedFile, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from "@nestjs/common";
 import { AdminService } from "./admin.service";
-import { AdminDTO, AdminLoginDTO, ProductDTO } from "./admin.dto";
+import { AdminDTO, AdminLoginDTO, ProductDTO, adminCustomerDTO } from "./admin.dto";
 import { AssignProductDTO, CustomerDTO, CustomerUpdateDTO } from "src/customer/customer.dto";
 import { CustomerEntity } from "src/customer/customer.entity";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { MulterError, diskStorage } from "multer";
+import { SessionGuard } from "src/customer/session.gaurd";
 
 @Controller('admin')
 export class AdminController{
 
     constructor(private readonly adminService: AdminService){}
-    @Get('/index')
-    getIndex(): any {
-    return this.adminService.getIndex();
+
+    @Post('/loginn')
+    async login(@Query() query:CustomerDTO, @Session() session) {
+       const AdminINFO = await this.adminService.login(query);
+       session.AdminID = AdminINFO.email;
+       session.email = AdminINFO.email;
+       return "Login successfull";
     }
-// @Get('/search/:id')
-// getAdminById(@Param() id:number): any {
-// return this.adminService.getAdminById(id);
-// }
-// @Get('/search')
-// getAdminbyName(@Query() qry:AdminDTO): string {
 
-// return this.adminService.getAdminByName(qry);
-// }
-
-
-// Feature 1 : Register a new admin
-@Post('/register')
-@UsePipes(new ValidationPipe())
-register(@Body() data:AdminDTO):object {
-console.log(data);
-return this.adminService.register(data);
-
+    // * Feature 8 : view customer profile
+    @Get('/showprofiledetails')
+    @UseGuards(SessionGuard)
+    showProfileDetails(@Session() session) {
+        return this.adminService.showProfileDetails(session.AdminID);
 }
 
-// Feature 2 : Search Customer by id
-@Get("/CustomerById/:id")
-getCustomerById(@Param('id', ParseIntPipe) id: CustomerDTO, @Body() mydata:CustomerDTO): any 
-{
-    console.log(mydata);
-    return this.adminService.getCustomerById(id,mydata);
-}
-
-@Get('/customer/:id')
-    geCustomerId(@Param('id', ParseIntPipe) id:number): any {
-        return this.adminService.geCustomerId(id);
-   }
-
-   // Feature 3 : Customer Profile Update
-
-@Put('/customer_update_profile_info/:id')
+    // * Feature 3 : Update admin profile
+    @Put('/updateprofile')
+    @UseGuards(SessionGuard)
     @UsePipes(new ValidationPipe())
-    UpdateProfileInfo(@Param('id', ParseIntPipe) id:number, @Body() updated_data:CustomerUpdateDTO): object{
+    updateprofile(@Body() data:AdminDTO): object{
+        return this.adminService.updateprofile(data);
+}
+
+//.....................Admin Customer Manage .....................//
+
+// * Feature 3 : Update customer profile by id
+@Put('/customer_update_profile_info/:id')
+@UseGuards(SessionGuard)
+    @UsePipes(new ValidationPipe())
+    UpdateProfileInfo(@Param('id', ParseIntPipe) id:number, @Session() session, @Body() updated_data:CustomerUpdateDTO): object{
         return this.adminService.UpdateProfileInfo(id,updated_data);
     }
 
-    // Feature 4 : Delete Customer Profile by id
-@Delete('/delete_profile/:id')
+
+    // * Feature 4 : Delete customer profile by id
+@Delete('/customer_delete_profile/:id')
+@UseGuards(SessionGuard)
     DeleteAccount(@Param('id', ParseIntPipe) id:number): object{
         return this.adminService.DeleteAccount(id);
     }
 
-    // Feature 5 : signin Admin
+// * Feature 7 : View Customer Profile
 
-    @Post('/signin')
-    signIn(@Body() data:AdminLoginDTO){
-    return this.adminService.signIn(data);
-}
+  @Get('/CustomerById/:customerid')
+//   @UseGuards(SessionGuard)
+  async getCustomerById(@Param('customerid') customerid:string) {
+      return await this.adminService.getCustomerById(customerid);
+  }
+
+
+   // * Feature 8 : View Customer Images
+
+   @Get('getimagebycustomerid/:customerId')
+   @UseGuards(SessionGuard)
+ async getimagebyid(@Param('customerId', ParseIntPipe) customerId:number, @Res() res){
+     const filename = await this.adminService.getimagebycustomerid(customerId);
+     res.sendFile(filename, { root: './uploads/customer_register_img' })
+ 
+ }
+    // view all orders
+
+    @Get('/getallorders')
+    getAllOrders(): object {
+        return this.adminService.getAllOrders();
+    }
+// ekta order kon customer er tar jonno
+    @Get('/customerorderss/:OrderId')
+    customerorderss(@Param('OrderId', ParseIntPipe) OrderId:number) {
+         return this.adminService.customerorderss(OrderId);
+     }
+ // kon order ta kon customer er tar jonno
+
+    @Get('/getallorderss/:OrderId')
+   getOrderss(@Param('OrderId', ParseIntPipe) OrderId:number) {
+        return this.adminService.getallOrders(OrderId);
+    }
+//// ekta product koto jon order korche ta dekhabe
+    @Get('/onePdoductAllOrders/:ProductId')
+    onePdoductAllOrders(@Param('ProductId', ParseIntPipe) ProductId:number) {
+           
+            return this.adminService.onePdoductAllOrders(ProductId);
+        }
+
+
+
+
+// // Feature 2 : Search Customer by id
+// @Get("/CustomerById/:id")
+// getCustomerById(@Param('id', ParseIntPipe) id: CustomerEntity, @Body() mydata:CustomerDTO): any 
+// {
+//     console.log(mydata);
+//     return this.adminService.getCustomerById(id,mydata);
+// }
+
+// @Get('/profile/:id')
+// ViewCustomerProfile(@Param('id', ParseIntPipe) id:number): object{
+//     return this.adminService.ViewCustomerProfile(id);
+// }
+
+
+// @Get('/customer/:id')
+//     geCustomerId(@Param('id', ParseIntPipe) id:number): any {
+//         return this.adminService.geCustomerId(id);
+//    }
+
+
    
     // .....................Admin Product Manage .....................//
 // * Feature 1 : Add a customer Assign_Product
