@@ -59,7 +59,7 @@ export class CustomerService{
             throw new NotFoundException
             ({
             status: HttpStatus.NOT_FOUND,
-            message: "Member not found"
+            message: "Your Account Not found. Please Register First"
         })}
         else {
             if (await bcrypt.compare(password, CustomerDetails.password)) {
@@ -73,31 +73,35 @@ export class CustomerService{
         }
     }
 }
-// * Feature 3 : Update customer profile
+
+// * Feature 3 : View Customer Profile
+async ViewCustomerProfile(id: number): Promise<CustomerEntity> {
+    return this.customerRepo.findOneBy({customerid: id});
+}
+//Now Run this Query in Postman
+async showProfileDetails(CustomerID) {
+    return await this.customerRepo.findOneBy({ customerid : CustomerID });
+}
 
 
+// * Feature 4 : Update customer profile
 async UpdateProfileInfo(id: number, updated_data: CustomerUpdateDTO): Promise<CustomerEntity> {
     await this.customerRepo.update(id, updated_data); // Where to Update , Updated Data
     return this.customerRepo.findOneBy({customerid: id});
 }
 
-
-
-
-// * Feature 5 : Delete customer profile 
+// * Feature 5 : Update customer profile pic
+async UpdateProfilePic(id: number, updated_data: CustomerPicDTO): Promise<CustomerEntity> {
+    await this.customerRepo.update(id, updated_data); // Where to Update , Updated Data
+    return this.customerRepo.findOneBy({customerid: id});
+}
+// * Feature 6 : Delete customer profile 
     DeleteAccount(id: number): any {
         this.customerRepo.delete(id);
-        return {"Success":"Account Deleted Successfully"};
+        return {"Success":"Your Account Deleted Successfully"};
     }
 
-// * Feature 6: View Customer Profile
-    async ViewCustomerProfile(id: number): Promise<CustomerEntity> {
-        return this.customerRepo.findOneBy({customerid: id});
-}
-//Now Run this Query in Postman
-    async showProfileDetails(CustomerID) {
-        return await this.customerRepo.findOneBy({ customerid : CustomerID });
-}
+
 
 
 // * Feature 7 : View Customer Images
@@ -122,10 +126,9 @@ async UpdateProfileInfo(id: number, updated_data: CustomerUpdateDTO): Promise<Cu
 
 // * Feature 8: Logout
     async Logout(id: number): Promise<any> {
-        const currentSeller = this.customerRepo.findOneBy({customerid: id});
-        if(currentSeller){
-        // Destroy Session
-        return "Logout Successfully";
+        const currentCustomer = this.customerRepo.findOneBy({customerid: id});
+        if(currentCustomer){
+        return "Logout Successfully";    // Destroy Session BUT NOT WORKING
     }
     else{
         return "Logout Failed";
@@ -169,7 +172,7 @@ DeleteAddressInfo(id: number): any {
 // .....................Customer Product Review Manage .....................//
    
 // * Feature 13 : Add a Receive Product Review
-
+//now run this query in postman
 //1 nd way
     async ProductReview(id:number,review_info: ReviewDTO) : Promise<ProductReview> {
         return this.ProductReviewRepo.save(review_info);
@@ -316,6 +319,11 @@ async findAll(): Promise<ProductEntity[]> {
 async ViewAllProductInfo(): Promise<ProductEntity[]> {
     return this.ProductsRepo.find();
 }
+async searchproduct(id: number): Promise<ProductEntity> {
+      
+    return this.ProductsRepo.findOneBy({ id });
+
+}
 
 
 
@@ -371,48 +379,6 @@ DeleteOrder(id: number): any {
 
 
 
-
-
-    
-
-    updateReview(data: ReviewUpdateDTO): object
-    {
-        console.log(data.id);
-        console.log(data.review);
-        return data;
-    }
-
-    updateReviewId(id:number,data: ReviewUpdateDTO): object
-    {
-       
-        return data;
-    }
-
-    dupdateReview(data: DRevieweUpdateDTO): object
-    {
-       
-        console.log(data.Review);
-        return data;
-    }
-
-    dupdateReviewId(id:number,data: DRevieweUpdateDTO): object
-    {
-        console.log(id);
-        console.log(data);
-        return data;
-    }
-
-    // addreviewd(data: DRevieweDTO): object
-    // {
-    //     return data;
-    // }
-
-    DRevieweUpdateDTO(data: ReviewUpdateDTO): object {
-        throw new Error("Method not implemented.");
-    }
-
-
-
    
 
 
@@ -431,27 +397,10 @@ DeleteOrder(id: number): any {
         //     );
         //   }
 
-
-      
-
-
-
-
-
-
-
-
-
-          
-
-
        // async deleteOrder(customerId: number, orderId: number) {
         // const customer = await this.customerRepo.findOne(customerId, {
         // relations: ["orders"],
         // });
-
-
-
 
         // async searchOrdersByCustomerId(customerId: number) {
         //     const customer = await this.customerRepo.findOne(customerId, {
@@ -465,13 +414,10 @@ DeleteOrder(id: number): any {
         //     return customer.orders;
         //     }
 
-
         // async productadd(data: ProductDTO): Promise<ProductEntity> {
         //     const salt = await bcrypt.genSalt();
         //    return this.ProductsRepo.save(data);
         // }
-
-
 
         
     // async getUserWithProfile(id: number): Promise<CustomerEntity> {
