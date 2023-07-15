@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://github.com/Alamin031/Hr-Tech/blob/master/hr-tech-logo/svg/logo-color.svg" alt="Hr Tech" width="100%" height="250"/>
+<img src="https://github.com/Alamin031/ATP3/blob/Alamin/hr-tech-logo/svg/logo-color.svg" alt="Hr Tech" width="100%" height="250"/>
 </p>
 
 [circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
