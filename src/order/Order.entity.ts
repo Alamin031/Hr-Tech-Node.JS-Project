@@ -1,5 +1,5 @@
 import { ProductEntity } from "src/admin/admin.entity";
-import { CustomerEntity, ProductReview } from "src/customer/customer.entity";
+import { CustomerEntity, DeliveryMan_Review, ProductReview } from "src/customer/customer.entity";
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, OneToOne } from "typeorm";
 
 
@@ -27,4 +27,8 @@ ProductEntity
   customer: CustomerEntity;
   @ManyToOne(() => ProductEntity, (products) => products.orders)
   products: ProductEntity;
+  @OneToMany(() => DeliveryMan_Review, (DeliveryMan_Review) => DeliveryMan_Review.order)
+  DeliveryMan_Review: DeliveryMan_Review[];
+  
+
 }

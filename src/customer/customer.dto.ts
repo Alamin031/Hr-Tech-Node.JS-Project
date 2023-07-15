@@ -28,7 +28,7 @@ export class CustomerDTO{
     @MinLength(11)
     @MaxLength(11)
     @IsPhoneNumber('BD')
-    telephoneNumber: string;
+    PhoneNumber: number;
 
     @IsNotEmpty({ message: "😓 Email should not be empty 😓" })
     @IsEmail()
@@ -57,36 +57,13 @@ export class CustomerPicDTO{
     @IsString({ message: "😖😖😢👉First name must be a string😖😢👈" })
     @Matches(/^[A-Za-z.]+$/, {message: " 😖😖😢First name must contain letters only 😖😖😢👈" })
     firstName: string;
-
     @IsNotEmpty({ message: " 😖😢Last name should not be empty 😖😢👈" })
     @IsString({ message: "😖😢 Last name must be a string 😖😖😢👈" })
     @Matches(/^[A-Za-z.]+$/, {message: "😖😖😢 Last name must contain letters only 😖😢👈" })
     lastName: string;
-
-    @IsNotEmpty({ message: "😖😢 Username should not be empty 😖😢👈" })
-    @IsString({ message: "😖😢 Username must be a string 😖😢👈" })
-    username: string;
-
-    @IsNotEmpty({ message: "😖😢 Date of birth should not be empty 😖😢" })
-    @IsDate({ message: "😖😢 Date of birth should be a Date 😖😢" })
-    @Transform(({ value }) => new Date(value))
-    dateOfBirth: Date;
-
-    @IsNotEmpty({ message: "😖😢 Telephone Number should not be empty 😖😢" })
-    @MinLength(11)
-    @MaxLength(11)
-    @IsPhoneNumber('BD')
-    telephoneNumber: string;
-
     @IsNotEmpty({ message: "😖😢 Email should not be empty 😖😢" })
     @IsEmail()
     email: string;
-
-    @IsNotEmpty({ message: "😖😢 Password should not be empty 😖😢" })
-    @MinLength(8)
-    @MaxLength(30)
-    password: string;
-
     @IsNotEmpty({ message: "😖😢 Confirm password should not be empty 😖😢" })
     @MinLength(8)
     @MaxLength(30)
@@ -123,7 +100,37 @@ export class AddAddressDTO {
 
 export class CustomerUpdateDTO{
    customerid:number;
+   @IsNotEmpty({ message: "😖😖😢👉First name should not be empty 😖😖😢👈" })
+   @IsString({ message: "😖😖😢👉First name must be a string😖😢👈" })
+   @Matches(/^[A-Za-z.]+$/, {message: " 😖😖😢First name must contain letters only 😖😖😢👈" })
    firstName: string;
+
+   @IsNotEmpty({ message: " 😖😢Last name should not be empty 😖😢👈" })
+   @IsString({ message: "😖😢 Last name must be a string 😖😖😢👈" })
+   @Matches(/^[A-Za-z.]+$/, {message: "😖😖😢 Last name must contain letters only 😖😢👈" })
+   lastName: string;
+
+   @IsNotEmpty({ message: "😖😢 Username should not be empty 😖😢👈" })
+   @IsString({ message: "😖😢 Username must be a string 😖😢👈" })
+   username: string;
+
+   @IsNotEmpty({ message: "😖😢 Date of birth should not be empty 😖😢" })
+   @IsDate({ message: "😖😢 Date of birth should be a Date 😖😢" })
+   @Transform(({ value }) => new Date(value))
+   dateOfBirth: Date;
+
+   @IsNotEmpty({ message: "😖😢 Telephone Number should not be empty 😖😢" })
+   @MinLength(11)
+   @MaxLength(11)
+   @IsPhoneNumber('BD')
+   PhoneNumber: number;
+
+   @IsNotEmpty({ message: "😖😢 Email should not be empty 😖😢" })
+   @IsEmail()
+   email: string;
+
+
+
 
  }
  export class CustomerLoginDTO {
@@ -137,8 +144,8 @@ export class CustomerUpdateDTO{
     @IsNotEmpty( {message:"😖😢 Review should not be empty "})
     @IsString({message:"😖😢 Review must be a string "})
     Review: string;
-   @IsNotEmpty( {message:"😖😢 Date should not be empty "})
-   @IsString({message:"😖😢 Date must be a string "})
+    @IsNotEmpty( {message:"😖😢 Date should not be empty "})
+    @IsString({message:"😖😢 Date must be a string "})
     Date: string;
    //  Product_Image: string;
     

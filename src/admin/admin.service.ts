@@ -103,7 +103,7 @@ async getCustomerById(customerid) {
                 UserName: ${customer.username}
                 UserName: ${customer.username}
                 Date Of Birth: ${customer.dateOfBirth}
-                Telephone Number: ${customer.telephoneNumber}
+                Telephone Number: ${customer.PhoneNumber}
                 Email: ${customer.email}
                 Profile Picture: ${customer.profilePic}
                 ###########--Thank You--##########

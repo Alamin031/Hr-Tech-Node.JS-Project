@@ -4,7 +4,7 @@ import { AddressEntity } from "./customer_address.entity";
 import { ProductEntity } from "src/admin/admin.entity";
 
 
-@Entity("CustomerAdd")
+@Entity("Customer_Registration")
 export class CustomerEntity{
 @PrimaryGeneratedColumn()
 customerid: number;
@@ -18,8 +18,8 @@ username: string;
 @Column( { name: 'date_of_birth', type: 'date'} )
 dateOfBirth: Date;
 
-@Column( { name: 'telephone_number', type: 'varchar', length: 200 } )
-telephoneNumber: string;
+@Column( { name: 'Mobile_number', type: 'varchar', length: 200 } )
+PhoneNumber: number;
 
 @Column( { name: 'email', type: 'varchar', length: 200 } )
 email: string;
@@ -35,7 +35,8 @@ orders: Order[];
 ProductReview: ProductReview[];
 @OneToMany(() => Assign_Product, (Assign_Product) => Assign_Product.customer)
 Assign_Product: Assign_Product[];
-
+@OneToMany(() => DeliveryMan_Review, (DeliveryMan_Review) => DeliveryMan_Review.customer)
+DeliveryMan_Review: DeliveryMan_Review[];
 @OneToOne(() => AddressEntity, address => address.customer, { cascade: true })
 @JoinColumn()
 address: AddressEntity;
@@ -84,6 +85,10 @@ export class DeliveryMan_Review{
 id: number;
 @Column()
 Review: string;
+@ManyToOne(() => CustomerEntity, (customer) => customer.DeliveryMan_Review)
+customer: CustomerEntity;
+@ManyToOne(() => Order, (order) => order.DeliveryMan_Review)
+order: Order;
 @Column()
 Date: string;
 }

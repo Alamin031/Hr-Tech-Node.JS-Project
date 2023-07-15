@@ -1,5 +1,5 @@
-import { Body, Controller, Delete, ForbiddenException, Get, HttpStatus, Param, ParseIntPipe, Post, Put, Query, Request, Res, Session, UploadedFile, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from "@nestjs/common";
-import { AddAddressDTO, AssignProductDTO, CustomerDTO, CustomerUpdateDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewDTO, ReviewUpdateDTO, editProductDTO } from "./customer.dto";
+import { Body, Controller, Delete, ForbiddenException, Get, HttpStatus, NotFoundException, Param, ParseIntPipe, Post, Put, Query, Request, Res, Session, UploadedFile, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from "@nestjs/common";
+import { AddAddressDTO, AssignProductDTO, CustomerDTO, CustomerPicDTO, CustomerUpdateDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewDTO, ReviewUpdateDTO, editProductDTO } from "./customer.dto";
 import { CustomerService } from "./customer.service";
 // import { ReviewDTO } from "./review.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
@@ -10,6 +10,7 @@ import { AddressEntity } from "./customer_address.entity";
 import session from "express-session";
 import { SessionGuard } from "./session.gaurd";
 import { OrderDTO } from "src/order/order.dto";
+import { ProductEntity } from "src/admin/admin.entity";
 
 
 @Controller('customer')
@@ -63,7 +64,7 @@ export class CustomerController{
 
   // * Feature 2 : Login customer
 
-  @Post('/loginn')
+  @Post('/login')
 async login(@Query() query:CustomerDTO, @Session() session) {
    const CustomerDetails = await this.customerService.login(query);
    session.CustomerID = CustomerDetails.customerid;
@@ -87,14 +88,38 @@ async login(@Query() query:CustomerDTO, @Session() session) {
         return this.customerService.UpdateProfileInfo(session.CustomerID,updated_data);
     }
 
+    // * Feature 5 : Update customer profile pic
+@Put('/update_profile_pic')
+@UseGuards(SessionGuard)
+@UseInterceptors(FileInterceptor('profilePicture',
+{ fileFilter(req, file, callback) {
+    if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/)) {
+        callback(null, true);
+    } else {
+        callback(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false)
+    }
+},
+limits: { fileSize: 1000000 },
+storage:diskStorage({
+    destination: './uploads/customer_register_img',
+    filename(req, file, callback) {
+        callback(null, Date.now() + file.originalname)
+    },
+})
+}))
+async UpdateProfilePic(@Session() session, @Body() updated_data:CustomerPicDTO, @UploadedFile() profilePicture: Express.Multer.File) {
+    updated_data.profilePic = profilePicture.filename;
+    return this.customerService.UpdateProfilePic(session.CustomerID,updated_data);
+}
 
-// * Feature 5 : Delete customer profile 
+
+// * Feature 6 : Delete customer profile 
 @Delete('/DeleteAccount')
 @UseGuards(SessionGuard)
     DeleteAccount(@Session() session) {
      return this.customerService.DeleteAccount(session.CustomerID);
 }
-// * Feature 8 : View Customer Images
+// * Feature 7 : View Customer Images
   @Get('getimagebycustomerid/:customerId')
   @UseGuards(SessionGuard)
     async getimagebyid(@Param('customerId', ParseIntPipe) customerId:number, @Res() res){
@@ -119,10 +144,10 @@ return this.customerService.showProfileDetailss(session.CustomerID);
 
 
  // * Feature 8 : Logout
- @Post('/logout/:id')
+ @Post('/logout')
  @UseGuards(SessionGuard)
- Logout(@Param('id', ParseIntPipe) id:number): object{
-     return this.customerService.Logout(id);
+ Logout(@Session() session): object{
+     return this.customerService.Logout(session.CustomerID);
  }
 
 
@@ -137,6 +162,7 @@ return this.customerService.showProfileDetailss(session.CustomerID);
 // return this.customerService.addAddress(data);
 // }
 
+// Feature 10 : Customer Add Address
 @Post('/add_address/:id')
 // @UseGuards(SessionGuard)
 async createAddress(@Param('id', ParseIntPipe) data: { customer: CustomerEntity, address: AddressEntity }): Promise<CustomerEntity> {
@@ -168,8 +194,9 @@ async createAddress(@Param('id', ParseIntPipe) data: { customer: CustomerEntity,
 
 
     // .....................Customer Review Manage .....................//
-
+//now run this query in postman
 @Post('/add_review')
+@UseGuards(SessionGuard)
 @UsePipes(new ValidationPipe())
 ProductReview(@Session() session, @Body() data:ReviewDTO):object {
         console.log(data);
@@ -184,6 +211,7 @@ addreviews(@Body() review) {
 
 // * Feature 2 : Update review Info
 @Put('/update_review_info/:id')
+@UseGuards(SessionGuard)
 @UsePipes(new ValidationPipe())
 UpdatereviewInfo(@Param('id', ParseIntPipe) id:number, @Body() updated_data:ReviewDTO): object{
     return this.customerService.UpdatereviewInfo(id,updated_data);
@@ -191,6 +219,7 @@ UpdatereviewInfo(@Param('id', ParseIntPipe) id:number, @Body() updated_data:Revi
 
 // * Feature 3 : Delete review Info
 @Delete('/delete_review/:id')
+@UseGuards(SessionGuard)
 DeletereviewInfo(@Param('id', ParseIntPipe) id:number): number{
     return this.customerService.DeletereviewInfo(id);
 }
@@ -202,9 +231,12 @@ DeletereviewInfo(@Param('id', ParseIntPipe) id:number): number{
 }
 
 
+
+
     // .....................Customer Assign_Product Manage .....................//
 // * Feature 1 : Add a customer Assign_Product
 @Post('/add_assign_product')
+@UseGuards(SessionGuard)
 @UseInterceptors(FileInterceptor('image',
         {
             fileFilter: (req, file, cb) => {
@@ -316,6 +348,7 @@ DeleteDeliveryManReviewInfo(@Param('id', ParseIntPipe) id:number): number{
 }
 
 
+    // .....................Customer product  Manage .....................//
 
 // Feature 7 : View All Product Info
 
@@ -324,61 +357,47 @@ ViewAllProductInfo(): object{
     return this.customerService.ViewAllProductInfo();
 }
 
-@Get('/getimage/:name')
-getImages(@Param('name') name, @Res() res) {
- res.sendFile(name,{ root: './uploads' })
- }
+@Get('/searchproduct/:id')
+async searchproduct(@Param('id', ParseIntPipe) id: number): Promise<ProductEntity> {
 
- 
-
- @Put('/updatereview')
- //@UsePipes(new ValidationPipe())
- updateReview(@Body() data:ReviewUpdateDTO): object{
-     return this.customerService.updateReview(data);
- }
- @Put('/updatereview/:id')
- @UsePipes(new ValidationPipe())
- updateReviewId(@Param() id:number,@Body() data:ReviewUpdateDTO): object{
-     return this.customerService.updateReviewId(id,data);
- }
-
- @Put('/dupdatereview')
- //@UsePipes(new ValidationPipe())
- dupdateReview(@Body() data:DRevieweUpdateDTO): object{
-     return this.customerService.dupdateReview(data);
- }
- @Put('/dupdatereview/:id')
-//  @UsePipes(new ValidationPipe())
- dupdateReviewId(@Param() id:number,@Body() data:DRevieweUpdateDTO): object{
-     return this.customerService.dupdateReviewId(id,data);
- }
-
-@Post('/addorder')
-addOrders(@Body() order) {
-    console.log(order);
-    return this.customerService.addOrders(order);
+    const res = await this.customerService.searchproduct(id)
+    if (res !== null) {
+        console.log(res);
+        return res;
+    }
+    else {
+        throw new NotFoundException({
+            status: HttpStatus.NOT_FOUND,
+            message: "Product not found"
+        });
+    }
 }
+    // .....................Customer order  Manage .....................//
 
-@Get('/getordersss')
-    @UseGuards(SessionGuard)
-    getOrders(@Session() session) {
-     return this.customerService.getOrders(session.CustomerID);
-}
-
- 
-
-
-
-// @Put('/updateorders')
-//     updateOrders(@Body() data:OrderUpdateDTO): object{
-//         return this.customerService.updateOrders(data);
-//     }
-
-
-@Delete('/orders/:id')
-DeleteOrder(@Param('id', ParseIntPipe) id:number): object{
-    return this.customerService.DeleteOrder(id);
-}
+    @Post('/addorder')
+    addOrders(@Body() order) {
+        console.log(order);
+        return this.customerService.addOrders(order);
+    }
+    
+    @Get('/getordersss')
+        @UseGuards(SessionGuard)
+        getOrders(@Session() session) {
+         return this.customerService.getOrders(session.CustomerID);
+    }
+    
+    @Delete('/orders/:id')
+    DeleteOrder(@Param('id', ParseIntPipe) id:number): object{
+        return this.customerService.DeleteOrder(id);
+    }
+      
+    
+    
+    
+    // @Put('/updateorders')
+    //     updateOrders(@Body() data:OrderUpdateDTO): object{
+    //         return this.customerService.updateOrders(data);
+    //     }
 
 
 // @Delete('/orderss/:id')

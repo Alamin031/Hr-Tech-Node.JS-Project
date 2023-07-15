@@ -44,7 +44,7 @@ export class adminCustomerDTO{
     @MinLength(11)
     @MaxLength(11)
     @IsPhoneNumber('BD')
-    telephoneNumber: string;
+    PhoneNumber: number;
 
     @IsNotEmpty({ message: "😓 Email should not be empty 😓" })
     @IsEmail()
