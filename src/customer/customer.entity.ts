@@ -93,6 +93,21 @@ order: Order;
 Date: string;
 }
 
+@Entity("pincode")
+export class PinCodeEntity{
+    
+    @PrimaryGeneratedColumn()
+    Pin_ID : number;
+
+    @Column()
+    Pin_Code : string;
+
+    //  One to One Relationships. One customer can have only one Pin
+    @OneToOne(() => CustomerEntity)
+    @JoinColumn()
+    customer: CustomerEntity;
+
+}
 // @Entity("Customer_DeliveryMan_Assign_Product")
 // export class DeliveryMan_Assign_Product{
 // @PrimaryGeneratedColumn()

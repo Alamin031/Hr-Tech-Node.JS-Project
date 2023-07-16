@@ -390,6 +390,11 @@ async searchproduct(@Param('id', ParseIntPipe) id: number): Promise<ProductEntit
     DeleteOrder(@Param('id', ParseIntPipe) id:number): object{
         return this.customerService.DeleteOrder(id);
     }
+
+    @Post('/forget_password')
+    ForgetPassword(@Session() session){
+        return this.customerService.ForgetPassword(session.Seller_Email);
+    }
       
     
     

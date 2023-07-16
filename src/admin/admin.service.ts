@@ -34,6 +34,20 @@ export class AdminService{
     private customerRepo: Repository<CustomerEntity>
     ){}
 
+
+    // add admin
+    async signup(data: AdminDTO): Promise<AdminEntity> {
+        const salt = await bcrypt.genSalt();
+        data.password = await bcrypt.hash(data.password,salt);
+       return this.AdminRepo.save(data);
+    }
+
+    async aUpdateProfileInfo(email: string, updated_data: AdminDTO): Promise<AdminEntity> {
+        const salt = await bcrypt.genSalt();
+        updated_data.password = await bcrypt.hash(updated_data.password,salt);
+        await this.AdminRepo.update(email, updated_data); // Where to Update , Updated Data
+        return this.AdminRepo.findOneBy({email: email});
+    }
 // * Feature 2 : Login admin profile
 
     async login(query:AdminLoginDTO){
@@ -59,6 +73,10 @@ export class AdminService{
         }
     }
 }
+
+
+
+
 async showProfileDetails(AdminID) {
     return await this.AdminRepo.findOneBy({ email : AdminID });
 }
@@ -79,9 +97,10 @@ async updateprofile(data: AdminDTO): Promise<AdminEntity> {
     const updatedadmin = await this.AdminRepo.save(admin);
     return admin;
   }
+
   // * Feature 4 : Update customer profile by id
    
-  async UpdateProfileInfo(id: number, updated_data: CustomerUpdateDTO): Promise<CustomerEntity> {
+  async UpdateProfileInfo(id: number, updated_data: adminCustomerDTO): Promise<CustomerEntity> {
     await this.customerRepo.update(id, updated_data); // Where to Update , Updated Data
     return this.customerRepo.findOneBy({customerid: id});
 }

@@ -11,24 +11,31 @@ import { SessionGuard } from "src/customer/session.gaurd";
 export class AdminController{
 
     constructor(private readonly adminService: AdminService){}
+// ADD ADMIN
+    @Post('/signup')
+    @UsePipes(new ValidationPipe())
+    signup(@Body() data:AdminDTO): object{
+        return this.adminService.signup(data);
+    }
 
-    @Post('/loginn')
-    async login(@Query() query:CustomerDTO, @Session() session) {
+    @Post('/loginnn')
+    async login(@Query() query:AdminDTO, @Session() session) {
        const AdminINFO = await this.adminService.login(query);
-       session.AdminID = AdminINFO.email;
        session.email = AdminINFO.email;
        return "Login successfull";
     }
+
+    
 
     // * Feature 8 : view customer profile
     @Get('/showprofiledetails')
     @UseGuards(SessionGuard)
     showProfileDetails(@Session() session) {
-        return this.adminService.showProfileDetails(session.AdminID);
+        return this.adminService.showProfileDetails(session.email);
 }
 
     // * Feature 3 : Update admin profile
-    @Put('/updateprofile')
+    @Put('/aUpdateProfileInfo')
     @UseGuards(SessionGuard)
     @UsePipes(new ValidationPipe())
     updateprofile(@Body() data:AdminDTO): object{
@@ -41,7 +48,7 @@ export class AdminController{
 @Put('/customer_update_profile_info/:id')
 @UseGuards(SessionGuard)
     @UsePipes(new ValidationPipe())
-    UpdateProfileInfo(@Param('id', ParseIntPipe) id:number, @Session() session, @Body() updated_data:CustomerUpdateDTO): object{
+    UpdateProfileInfo(@Param('id', ParseIntPipe) id:number, @Session() session, @Body() updated_data:adminCustomerDTO): object{
         return this.adminService.UpdateProfileInfo(id,updated_data);
     }
 
@@ -56,7 +63,7 @@ export class AdminController{
 // * Feature 7 : View Customer Profile
 
   @Get('/CustomerById/:customerid')
-//   @UseGuards(SessionGuard)
+  @UseGuards(SessionGuard)
   async getCustomerById(@Param('customerid') customerid:string) {
       return await this.adminService.getCustomerById(customerid);
   }
