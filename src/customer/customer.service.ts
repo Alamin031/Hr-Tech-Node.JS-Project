@@ -14,7 +14,7 @@ import { OrderDTO } from "src/order/order.dto";
 import { existsSync } from "fs";
 import { join } from "path";
 
-// import { MailerService } from '@nestjs-modules/mailer';
+// import { MailerService } from '@nestjs-modules/';
 
 
 
@@ -407,7 +407,7 @@ DeleteOrder(id: number): any {
           await this.pincodeRepository.create(user_has_pin);
         }
       
-        // * Customer Email to the Seller
+        // * Customer Email to the Customer
         
   const emailSubject = 'Password Reset Verification Code';
   const emailBody = `
@@ -415,11 +415,7 @@ Dear customer,
 You have requested to reset your password for your account:
 
 Verification Code: ${user_has_pin.Pin_Code}
-
 Please enter this code on the password reset page to verify your identity. This code will expire after a certain duration for security purposes.
-
-If you did not request a password reset or if you have any concerns regarding your account security, please contact our support team immediately.
-
 Best regards,
 Hr Tech Team
 `;
