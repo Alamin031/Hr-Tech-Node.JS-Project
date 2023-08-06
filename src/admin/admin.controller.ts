@@ -25,6 +25,13 @@ export class AdminController{
        return "Login successfull";
     }
 
+    @Post('/signin')
+    async Loginn(@Body() data:AdminDTO, @Session() session) {
+    const AdminINFO = await this.adminService.Loginn(data);
+    session.email = AdminINFO.email;
+    return "Login successfull";
+}
+
     
 
     // * Feature 8 : view customer profile
@@ -39,14 +46,23 @@ export class AdminController{
     @UseGuards(SessionGuard)
     @UsePipes(new ValidationPipe())
     updateprofile(@Body() data:AdminDTO): object{
-        return this.adminService.updateprofile(data);
+    return this.adminService.updateprofile(data);
 }
 
 //.....................Admin Customer Manage .....................//
 
+// * Feature 1 : show all customer
+@Get('/showallcustomer')
+// @UseGuards(SessionGuard)
+showallcustomer(): object {
+    return this.adminService.showallcustomer();
+}
+
+
+
 // * Feature 3 : Update customer profile by id
 @Put('/customer_update_profile_info/:id')
-@UseGuards(SessionGuard)
+// @UseGuards(SessionGuard)
     @UsePipes(new ValidationPipe())
     UpdateProfileInfo(@Param('id', ParseIntPipe) id:number, @Session() session, @Body() updated_data:adminCustomerDTO): object{
         return this.adminService.UpdateProfileInfo(id,updated_data);
@@ -55,7 +71,7 @@ export class AdminController{
 
     // * Feature 4 : Delete customer profile by id
 @Delete('/customer_delete_profile/:id')
-@UseGuards(SessionGuard)
+// @UseGuards(SessionGuard)
     DeleteAccount(@Param('id', ParseIntPipe) id:number): object{
         return this.adminService.DeleteAccount(id);
     }
@@ -63,9 +79,9 @@ export class AdminController{
 // * Feature 7 : View Customer Profile
 
   @Get('/CustomerById/:customerid')
-  @UseGuards(SessionGuard)
-  async getCustomerById(@Param('customerid') customerid:string) {
-      return await this.adminService.getCustomerById(customerid);
+//   @UseGuards(SessionGuard)
+  async ViewCustomerProfile(@Param('customerid',ParseIntPipe) customerid:number) {
+      return await this.adminService.ViewCustomerProfile(customerid);
   }
 
 

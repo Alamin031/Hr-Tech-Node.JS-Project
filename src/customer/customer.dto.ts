@@ -7,12 +7,13 @@ export class CustomerDTO{
    customerid:number;
     @IsNotEmpty({ message: "😓 First name should not be empty 😓" })
     @IsString({ message: "😓 First name must be a string 😓" })
-    @Matches(/^[A-Za-z.]+$/, {message: "😓 First name must contain letters only 😓" })
+    @Matches(/^[A-Za-z. ]+$/, {message: "😓 First name must contain letters and spaces only 😓" })
+
     firstName: string;
 
     @IsNotEmpty({ message: "😓 Last name should not be empty 😓" })
     @IsString({ message: "😓 Last name must be a string 😓" })
-    @Matches(/^[A-Za-z.]+$/, {message: "😓 Last name must contain letters only 😓" })
+    @Matches(/^[A-Za-z. ]+$/, {message: "😓 Last name must contain letters and spaces only 😓" })
     lastName: string;
 
     @IsNotEmpty({ message: "😓 Username should not be empty 😓" })
@@ -137,6 +138,8 @@ export class CustomerUpdateDTO{
    @IsEmail({}, { message: "invalid email" })
   email: string;
   password: string;
+  username: string;
+
 }
 
  export class ReviewDTO{

@@ -74,12 +74,38 @@ export class AdminService{
     }
 }
 
+async Loginn (data:AdminLoginDTO): Promise<AdminEntity> {
+    const email = data.email;
+    const password = data.password;
+    const CustomerDetails = await this.AdminRepo.findOneBy({ email : email });
+        
+        if (CustomerDetails === null) {
+            throw new NotFoundException
+            ({
+            status: HttpStatus.NOT_FOUND,
+            message: "Your Account Not found. Please Register First"
+        })}
+        else {
+            if (await bcrypt.compare(password, CustomerDetails.password)) {
+            return CustomerDetails;
+        } 
+        
+        else {
+            throw new UnauthorizedException({
+                status: HttpStatus.UNAUTHORIZED,
+                message: "Password does not match"
+            })
+        }
+    }
 
+}
 
 
 async showProfileDetails(AdminID) {
     return await this.AdminRepo.findOneBy({ email : AdminID });
 }
+
+
 
 
 // * Feature 3 : Update admin profile
@@ -110,6 +136,18 @@ DeleteAccount(id: number): any {
     this.customerRepo.delete(id);
     return {"Success":"Account Deleted Successfully"};
 }
+// * Feature 7 : View Customer Profile by id
+async ViewCustomerProfile(id: number): Promise<adminCustomerDTO> {
+    console.log(id);
+    return this.customerRepo.findOneBy({customerid: id});
+}
+
+// * Feature 1 : show all customer
+async showallcustomer(): Promise<CustomerEntity[]> {
+    return this.customerRepo.find();
+}
+
+
 
 // * Feature 6: View Customer Profile
 async getCustomerById(customerid) {

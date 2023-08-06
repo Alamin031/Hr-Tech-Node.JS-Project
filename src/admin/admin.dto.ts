@@ -25,8 +25,11 @@ export class adminCustomerDTO{
     lastName: string;
     username: string;
     dateOfBirth: Date;
+    @IsNotEmpty({ message: "😓 Telephone Number should not be empty 😓" })
+    @MinLength(11)
+    @MaxLength(11)
+    @IsPhoneNumber('BD')
     PhoneNumber: number;
-
     email: string;
     profilePic: string;
 

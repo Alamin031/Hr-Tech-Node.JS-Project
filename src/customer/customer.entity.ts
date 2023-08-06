@@ -26,6 +26,12 @@ email: string;
 
 @Column( { name: 'password', type: 'varchar', length: 200 } )
 password: string;
+@Column( { name: 'gender', type: 'varchar', length: 200 } )
+gender: string;
+@Column( { name: 'interests', type: 'varchar', length: 200 } )
+interests: string;
+@Column ( { name: 'country', type: 'varchar', length: 200 } )
+country: string;
 @Column ( { name: 'profilePic', type: 'varchar', length: 255 } )
 profilePic: string;
 // @OneToOne(() => AddressEntity, (address) => address.customer)

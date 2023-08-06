@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, ForbiddenException, Get, HttpStatus, NotFoundException, Param, ParseIntPipe, Post, Put, Query, Request, Res, Session, UploadedFile, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, HttpStatus, NotAcceptableException, NotFoundException, Param, ParseIntPipe, Post, Put, Query, Request, Res, Session, UploadedFile, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from "@nestjs/common";
 import { AddAddressDTO, AssignProductDTO, CustomerDTO, CustomerPicDTO, CustomerUpdateDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewDTO, ReviewUpdateDTO, editProductDTO } from "./customer.dto";
 import { CustomerService } from "./customer.service";
 // import { ReviewDTO } from "./review.dto";
@@ -11,6 +11,7 @@ import session from "express-session";
 import { SessionGuard } from "./session.gaurd";
 import { OrderDTO } from "src/order/order.dto";
 import { ProductEntity } from "src/admin/admin.entity";
+import { Order } from "src/order/Order.entity";
 
 
 @Controller('customer')
@@ -30,8 +31,9 @@ export class CustomerController{
   { fileFilter(req, file, callback) {
       if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/)) {
           callback(null, true);
-      } else {
-          callback(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false)
+      } 
+      else {
+          callback(new MulterError('LIMIT_UNEXPECTED_FILE', 'profilePicture'), false)
       }
   },
   limits: { fileSize: 1000000 },
@@ -44,6 +46,13 @@ export class CustomerController{
   }))
   async registerCustomer(@Session() session, @Body() data:CustomerDTO, @UploadedFile() profilePicture: Express.Multer.File) {
     data.profilePic = profilePicture.filename;
+    // data.profilePic = profilePicture ? profilePicture.filename : null;
+    if (!profilePicture || !profilePicture.filename) {
+        throw new BadRequestException('Profile picture is required.');
+      }
+  
+
+    console.log(profilePicture)
       if (data.password !== data.confirmPassword) {
           throw new ForbiddenException({
               status: HttpStatus.FORBIDDEN,
@@ -62,16 +71,99 @@ export class CustomerController{
       return "Hello Customer Your Registration successful";
   }
 
+
+  @Post('/registrationn')
+  @UsePipes(new ValidationPipe())
+  @UseInterceptors(FileInterceptor('profilePicture', {
+    fileFilter(req, file, callback) {
+      if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/)) {
+        callback(null, true);
+      } else {
+        callback(new MulterError('LIMIT_UNEXPECTED_FILE', 'profilePicture'), false)
+      }
+    },
+    limits: { fileSize: 1000000 },
+    storage: diskStorage({
+      destination: './uploads/customer_register_img',
+      filename(req, file, callback) {
+        callback(null, Date.now() + file.originalname)
+      },
+    })
+  }))
+  async registerCustomerr(@Session() session, @Body() data: CustomerDTO, @UploadedFile() profilePicture: Express.Multer.File) {
+    data.profilePic = profilePicture.filename;
+    if (!profilePicture || !profilePicture.filename) {
+      throw new BadRequestException('Profile picture is required.');
+    }
+    console.log(profilePicture)
+      if (data.password !== data.confirmPassword) {
+          throw new ForbiddenException({
+              status: HttpStatus.FORBIDDEN,
+              message: "Password and confirm password does not match."
+          });
+      }
+
+         // Check if the email is already registered
+    const existingEmailCustomer = await this.customerService.findByEmail(data.email);
+    // Check if the username is already taken
+    const existingUsernameCustomer = await this.customerService.findByUsername(data.username);
+
+    if (existingEmailCustomer && existingUsernameCustomer) {
+      throw new ForbiddenException({
+        status: HttpStatus.FORBIDDEN,
+        message: 'Email and Username are already associated with existing accounts.'
+      });
+    } else if (existingEmailCustomer) {
+      throw new BadRequestException({
+        status: HttpStatus.BAD_REQUEST,
+        message: 'Email is already associated with an existing account.'
+      });
+    } else if (existingUsernameCustomer) {
+      throw new NotAcceptableException({
+        status: HttpStatus.NOT_ACCEPTABLE,
+        message: 'Username is already taken.'
+      });
+    }
+
+    const customerDetails = await this.customerService.registerCustomerr(data);  
+    session.customerId = customerDetails.customerid;
+    session.email = customerDetails.email;
+    session.password = customerDetails.password;
+    console.log(session.email);
+    console.log(session.customerId);
+    console.log(session.password);
+    console.log(data);
+
+    return 'Hello Customer, Your registration was successful.';
+  }
+
+
   // * Feature 2 : Login customer
 
   @Post('/login')
-async login(@Query() query:CustomerDTO, @Session() session) {
+   async login(@Query() query:CustomerDTO, @Session() session) {
    const CustomerDetails = await this.customerService.login(query);
    session.CustomerID = CustomerDetails.customerid;
    session.email = CustomerDetails.email;
    session.profilePicture = CustomerDetails.profilePic;
+   console.log(session.CustomerID);
    return "Login successfull";
 }
+@Post('/signin')
+async Loginn(@Body() data:CustomerDTO, @Session() session) {
+    const CustomerDetails = await this.customerService.Loginn(data);
+    session.CustomerID = CustomerDetails.customerid;
+    session.email = CustomerDetails.email;
+    session.profilePicture = CustomerDetails.profilePic;
+    console.log(session.CustomerID);
+    return "Login successfull";
+}
+
+
+
+
+
+
 
 // * Feature 3 : view customer profile
     @Get('/showprofiledetails')
@@ -115,7 +207,7 @@ async UpdateProfilePic(@Session() session, @Body() updated_data:CustomerPicDTO, 
 
 // * Feature 6 : Delete customer profile 
 @Delete('/DeleteAccount')
-@UseGuards(SessionGuard)
+// @UseGuards(SessionGuard)
     DeleteAccount(@Session() session) {
      return this.customerService.DeleteAccount(session.CustomerID);
 }
@@ -149,7 +241,11 @@ return this.customerService.showProfileDetailss(session.CustomerID);
  Logout(@Session() session): object{
      return this.customerService.Logout(session.CustomerID);
  }
-
+// @Post('/signout')
+// @UseGuards(SessionGuard)
+// async logout(@Session() session) {
+//   return this.customerService.Logout(session,session.email);
+// }
 
 
 // .....................Customer Address Manage .....................
@@ -341,10 +437,21 @@ return this.customerService.adddeliverymanreview(data);
 UpdateDeliveryManReviewInfo(@Param('id', ParseIntPipe) id:number, @Body() updated_data:DRevieweDTO): object{
     return this.customerService.UpdateDeliveryManReviewInfo(id,updated_data);
 }
+
+
 // * Feature 3 : Delete DeliveryMan Review Info
 @Delete('/delete_deliveryman_review/:id')
 DeleteDeliveryManReviewInfo(@Param('id', ParseIntPipe) id:number): number{
+    // console.log(id);
     return this.customerService.DeleteDeliveryManReviewInfo(id);
+}
+
+
+
+@Put('/Updateorders/:id')
+@UsePipes(new ValidationPipe())
+Updateorder(@Param('id', ParseIntPipe) id:number, @Body() updated_data:OrderDTO): object{
+    return this.customerService.Updateorder(id,updated_data);
 }
 
 
@@ -380,10 +487,16 @@ async searchproduct(@Param('id', ParseIntPipe) id: number): Promise<ProductEntit
         return this.customerService.addOrders(order);
     }
     
-    @Get('/getordersss')
-        @UseGuards(SessionGuard)
-        getOrders(@Session() session) {
-         return this.customerService.getOrders(session.CustomerID);
+    // @Get('/getordersss')
+    //     @UseGuards(SessionGuard)
+    //     getOrders(@Session() session) {
+    //      return this.customerService.getOrders(session.CustomerID);
+    // }
+
+    @Get('/getorderss/:customerId')
+    getOrders(@Param('customerId', ParseIntPipe) customerId:number) {
+    console.log(customerId);
+        return this.customerService.getOrders(customerId);
     }
     
     @Delete('/orders/:id')
@@ -397,7 +510,10 @@ async searchproduct(@Param('id', ParseIntPipe) id: number): Promise<ProductEntit
     }
       
     
-    
+    @Get('/order')
+    order(): object{
+    return this.customerService.ViewAllorderInfo();
+}
     
     // @Put('/updateorders')
     //     updateOrders(@Body() data:OrderUpdateDTO): object{

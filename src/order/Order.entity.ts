@@ -19,8 +19,6 @@ totalAmount: number;
 
 @Column( { name: 'shipping_address', type: 'varchar', length: 255 } )
 shippingAddress: string;
-ProductEntity
-
   @OneToMany(() => ProductReview , (ProductReview) => ProductReview.order)
   ProductReview: ProductReview[];
   @ManyToOne(() => CustomerEntity, (customer) => customer.orders)
