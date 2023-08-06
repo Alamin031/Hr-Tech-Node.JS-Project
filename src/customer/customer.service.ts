@@ -55,14 +55,42 @@ export class CustomerService{
     data.password = await bcrypt.hash(data.password, salt);
     return await this.customerRepo.save(data);
 }
+
+async registerCustomerr(data: CustomerDTO): Promise<CustomerEntity> {
+    const salt = await bcrypt.genSalt();
+    data.password = await bcrypt.hash(data.password, salt);
+    return await this.customerRepo.save(data);
+  }
+
+  async findByEmail(email: string): Promise<CustomerEntity | undefined> {
+    return this.customerRepo.findOneBy({ email });
+  }
+
+  async findByUsername(username: string): Promise<CustomerEntity | undefined> {
+    return this.customerRepo.findOneBy({ username });
+  }
+
+
+async uploadFile(data: CustomerDTO): Promise<CustomerEntity> {
+    return await this.customerRepo.save(data);
+}
+
+
 // * Feature 2 : Login customer profile
 
     async login(query:CustomerLoginDTO){
         const email = query.email;
         const password = query.password;
+        const username = query.username;
         const CustomerDetails = await this.customerRepo.findOneBy({ email : email });
         
         if (CustomerDetails === null) {
+            throw new NotFoundException
+            ({
+            status: HttpStatus.NOT_FOUND,
+            message: "Your Account Not found. Please Register First"
+        })}
+        else if (CustomerDetails.username !== username) {
             throw new NotFoundException
             ({
             status: HttpStatus.NOT_FOUND,
@@ -72,6 +100,7 @@ export class CustomerService{
             if (await bcrypt.compare(password, CustomerDetails.password)) {
             return CustomerDetails;
         } 
+        
         else {
             throw new UnauthorizedException({
                 status: HttpStatus.UNAUTHORIZED,
@@ -79,7 +108,72 @@ export class CustomerService{
             })
         }
     }
+
 }
+
+
+
+
+// async signIn(data: CustomerLoginDTO): Promise<boolean> {
+
+//     const userData = await this.customerRepo.findOneBy({ email: data.email });
+//     if (userData !== undefined) {
+//       const match: boolean = await bcrypt.compare(data.password, userData.password);
+//       return match;
+//     }
+  
+//     return false;
+//   }
+
+
+async Loginn (data:CustomerLoginDTO): Promise<CustomerEntity> {
+    const email = data.email;
+    const password = data.password;
+    const username = data.username;
+    const CustomerDetails = await this.customerRepo.findOneBy({ email : email });
+        
+        if (CustomerDetails === null) {
+            throw new NotFoundException
+            ({
+            status: HttpStatus.NOT_FOUND,
+            message: "Your Account Not found. Please Register First"
+        })}
+        else if (CustomerDetails.username !== username) {
+            throw new NotFoundException
+            ({
+            status: HttpStatus.NOT_FOUND,
+            message: "Your user name Not found. Please Register First"
+        })}
+        else {
+            if (await bcrypt.compare(password, CustomerDetails.password)) {
+            return CustomerDetails;
+        } 
+        
+        else {
+            throw new UnauthorizedException({
+                status: HttpStatus.UNAUTHORIZED,
+                message: "Password does not match"
+            })
+        }
+    }
+
+}
+
+// async Logout(@Session() session, email: string) {
+//     const Search = await this.customerRepo.find({
+//       select: {
+//         name: true,
+//         id: true,
+//         password: false
+//       },
+//       where: {
+//         email: email,
+//       }
+//     });
+  
+//     session.destroy();
+//     return "Logout Successfully";
+//   }
 
 // * Feature 3 : View Customer Profile
 async ViewCustomerProfile(id: number): Promise<CustomerEntity> {
@@ -107,6 +201,8 @@ async UpdateProfilePic(id: number, updated_data: CustomerPicDTO): Promise<Custom
         this.customerRepo.delete(id);
         return {"Success":"Your Account Deleted Successfully"};
     }
+
+    // delete customer account by id
 
 
 
@@ -353,6 +449,13 @@ DeleteDeliveryManReviewInfo(id: number): any {
     return {"Success":"DeliveryMan Review Deleted Successfully"};
 }
 
+async Updateorder(id: number, updated_data: OrderDTO): Promise<Order> {
+    await this.orderRepo.update(id, updated_data); // Where to Update , Updated Data
+    return this.orderRepo.findOneBy({id: id});
+}
+   
+
+
 
 async addOrders(order): Promise<Order> {
     return this.orderRepo.save(order);
@@ -362,7 +465,6 @@ async addOrders(order): Promise<Order> {
 
 async getOrders(customerid):Promise<CustomerEntity[]> {
     console.log(customerid);
-
     return this.customerRepo.find({
         where:{customerid:customerid},
         relations: {
@@ -383,6 +485,10 @@ DeleteOrder(id: number): any {
     async deleteOrder(orderId: number, customerId: number) {
         await this.orderRepo.delete({ id: orderId, customer: { customerid: customerId } });
       }
+
+      async ViewAllorderInfo(): Promise<Order[]> {
+        return this.orderRepo.find();
+    }
 
 
       async ForgetPassword(email: string){
