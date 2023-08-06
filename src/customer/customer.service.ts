@@ -14,6 +14,9 @@ import { OrderDTO } from "src/order/order.dto";
 import { existsSync } from "fs";
 import { join } from "path";
 
+
+
+
 // import { MailerService } from '@nestjs-modules/';
 
 
@@ -490,6 +493,17 @@ DeleteOrder(id: number): any {
         return this.orderRepo.find();
     }
 
+    //show review by customer id
+    async getreviewbycustomerid(customerid):Promise<CustomerEntity[]> {
+        console.log(customerid);
+        return this.customerRepo.find({
+            where:{customerid:customerid},
+            relations: {
+                ProductReview: true,
+            },
+        });
+    }
+
 
       async ForgetPassword(email: string){
         // * Generate 6 Digit Code Pin
@@ -533,7 +547,37 @@ Hr Tech Team
                         //     text: emailBody,
                         //   });
       }
-   
+//   OTPSendEmail(email: string): any {
+//     const buffer = randomBytes(2);
+//     const otpCode = buffer.readUInt16BE(0) % 10000;
+//     const transporter = nodemailer.createTransport({
+//       service: 'gmail',
+//       auth: {
+//         user: 'mridoy031@gmail.com',
+//         pass: 'xwianrfxkmlevxhb',
+//       },
+//     });
+
+//     const mailOptions = {
+//       from: 'mridoy031@gmail.com',
+//       to: email,
+//       subject: 'YOUR OTP CODE',
+//       text: `Your OTP CODE: ${otpCode}. Do not share your OTP CODE.`,
+//     };
+
+//     transporter.sendMail(mailOptions, (error, info) => {
+//       if (error) {
+//         console.log(error);
+//       } else {
+//         console.log('Email sent: ' + info.response);
+//       }
+//     });
+
+//     return { otpCode };
+//   }
+
+
+
 
 
         //   async UpdateBookInfo(b_id:number, updated_data: BookDTO): Promise<BookEntity> {
@@ -551,32 +595,7 @@ Hr Tech Team
         //     );
         //   }
 
-       // async deleteOrder(customerId: number, orderId: number) {
-        // const customer = await this.customerRepo.findOne(customerId, {
-        // relations: ["orders"],
-        // });
 
-        // async searchOrdersByCustomerId(customerId: number) {
-        //     const customer = await this.customerRepo.findOne(customerId, {
-        //     relations: ["orders"],
-        //     });
-            
-        //     if (!customer) {
-        //     throw new Error("Customer not found.");
-        //     }
-            
-        //     return customer.orders;
-        //     }
-
-        // async productadd(data: ProductDTO): Promise<ProductEntity> {
-        //     const salt = await bcrypt.genSalt();
-        //    return this.ProductsRepo.save(data);
-        // }
-
-        
-    // async getUserWithProfile(id: number): Promise<CustomerEntity> {
-    //     return this.customerRepo.findOneBy(id, { relations: ['address'] });
-    //     }
    
         
     // async addToCart(customerID, query: editProductDTO, order: OrderDTO) {

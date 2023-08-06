@@ -2,7 +2,7 @@ import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get,
 import { AddAddressDTO, AssignProductDTO, CustomerDTO, CustomerPicDTO, CustomerUpdateDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewDTO, ReviewUpdateDTO, editProductDTO } from "./customer.dto";
 import { CustomerService } from "./customer.service";
 // import { ReviewDTO } from "./review.dto";
-import { FileInterceptor } from "@nestjs/platform-express";
+import { FileInterceptor } from '@nestjs/platform-express/multer';
 import { MulterError, diskStorage } from "multer";
 import { AdminDTO } from "src/admin/admin.dto";
 import { CustomerEntity } from "./customer.entity";
@@ -326,6 +326,14 @@ DeletereviewInfo(@Param('id', ParseIntPipe) id:number): number{
      return this.customerService.getreviews(session.CustomerID);
 }
 
+//show review by customer id
+@Get('/getreviewbycustomerid/:customerId')
+getreviewbycustomerid(@Param('customerId', ParseIntPipe) customerId:number) {
+    console.log(customerId);
+    return this.customerService.getreviewbycustomerid(customerId);
+}
+
+
 
 
 
@@ -514,6 +522,10 @@ async searchproduct(@Param('id', ParseIntPipe) id: number): Promise<ProductEntit
     order(): object{
     return this.customerService.ViewAllorderInfo();
 }
+
+
+
+
     
     // @Put('/updateorders')
     //     updateOrders(@Body() data:OrderUpdateDTO): object{

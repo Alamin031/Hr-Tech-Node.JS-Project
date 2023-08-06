@@ -57,8 +57,6 @@ id: number;
 Review: string;
 @Column()
 Date: string;
-// @Column()
-// Product_Image: string;
 @ManyToOne(() => CustomerEntity, (customer) => customer.ProductReview)
 customer: CustomerEntity;
 @ManyToOne(() => Order, (order) => order.ProductReview)
