@@ -3,7 +3,8 @@ import { AdminService } from "./admin.service";
 import { AdminDTO, AdminLoginDTO, ProductDTO, adminCustomerDTO } from "./admin.dto";
 import { AssignProductDTO, CustomerDTO, CustomerUpdateDTO } from "src/customer/customer.dto";
 import { CustomerEntity } from "src/customer/customer.entity";
-import { FileInterceptor } from "@nestjs/platform-express";
+// import { FileInterceptor } from "@nestjs/platform-express";
+import { FileInterceptor } from '@nestjs/platform-express/multer';
 import { MulterError, diskStorage } from "multer";
 import { SessionGuard } from "src/customer/session.gaurd";
 
