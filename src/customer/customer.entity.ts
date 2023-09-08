@@ -57,11 +57,13 @@ id: number;
 Review: string;
 @Column()
 Date: string;
-@ManyToOne(() => CustomerEntity, (customer) => customer.ProductReview)
+@Column()
+rating: number;
+@ManyToOne(() => CustomerEntity, (customer) => customer.ProductReview, { onDelete: 'CASCADE' })
 customer: CustomerEntity;
-@ManyToOne(() => Order, (order) => order.ProductReview)
+@ManyToOne(() => Order, (order) => order.ProductReview, { onDelete: 'CASCADE' })
 order: Order;
-@ManyToOne(() => ProductEntity, (products) => products.ProductReview)
+@ManyToOne(() => ProductEntity, (products) => products.ProductReview, { onDelete: 'CASCADE' })
 products: ProductEntity;
 }
 

@@ -1,12 +1,13 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, Request, Res, Session, UploadedFile, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, Req, Request, Res, Session, UnauthorizedException, UploadedFile, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from "@nestjs/common";
 import { AdminService } from "./admin.service";
-import { AdminDTO, AdminLoginDTO, ProductDTO, adminCustomerDTO } from "./admin.dto";
+import { AdminDTO, AdminLoginDTO, ContactDTO, ProductDTO, adminCustomerDTO } from "./admin.dto";
 import { AssignProductDTO, CustomerDTO, CustomerUpdateDTO } from "src/customer/customer.dto";
 import { CustomerEntity } from "src/customer/customer.entity";
 // import { FileInterceptor } from "@nestjs/platform-express";
 import { FileInterceptor } from '@nestjs/platform-express/multer';
 import { MulterError, diskStorage } from "multer";
 import { SessionGuard } from "src/customer/session.gaurd";
+import { ContactEntity } from "./admin.entity";
 
 @Controller('admin')
 export class AdminController{
@@ -32,8 +33,39 @@ export class AdminController{
     session.email = AdminINFO.email;
     return "Login successfull";
 }
+@Post('/contact')
+async createContact(@Body() data: ContactDTO): Promise<ContactEntity> {
+  return this.adminService.createContact(data);
+}
 
-    
+@Get()
+async getAllContacts(): Promise<ContactEntity[]> {
+  return this.adminService.getAllContacts();
+}
+// show admin profil details by email
+    @Get('/showprofile/:email')
+    // @UseGuards(SessionGuard)
+        showAdminProfileDetails(@Session() session) {
+        // console.log(session.email);
+        return this.adminService.showAdminProfileDetails(session.email);
+}
+// logout
+    @Get('/logout')
+    @UseGuards(SessionGuard)
+    logout(@Session() session) {
+        session.email = null;
+        return "Logout successfull";
+    }
+    @Post('/signout')
+// @UseGuards(SessionGuard)
+signout( @Req() req) {
+    if (req.session.destroy()) {
+        return true;
+    }
+    else {
+        throw new UnauthorizedException("invalid actions");
+    }
+}
 
     // * Feature 8 : view customer profile
     @Get('/showprofiledetails')
@@ -51,6 +83,15 @@ export class AdminController{
 }
 
 //.....................Admin Customer Manage .....................//
+
+//customer search by email
+@Get('/customersearch/:email')
+// @UseGuards(SessionGuard)
+customersearch(@Param('email') email:string): object{
+    return this.adminService.customersearch(email);
+}
+
+
 
 // * Feature 1 : show all customer
 @Get('/showallcustomer')
@@ -90,7 +131,7 @@ showallcustomer(): object {
 
    @Get('getimagebycustomerid/:customerId')
    @UseGuards(SessionGuard)
- async getimagebyid(@Param('customerId', ParseIntPipe) customerId:number, @Res() res){
+    async getimagebyid(@Param('customerId', ParseIntPipe) customerId:number, @Res() res){
      const filename = await this.adminService.getimagebycustomerid(customerId);
      res.sendFile(filename, { root: './uploads/customer_register_img' })
  
@@ -173,6 +214,38 @@ return this.adminService.productadd(mydata);
 
 }
 
+// view product and image
+// @Get('/getproduct')
+// getproduct(@Res() res): object {
+//     res.sendFile({ root: './uploads/assignproduct' })
+//     return this.adminService.getproduct();
+// }
+
+@Get('/getproduct')
+  async getproduct(@Res() res): Promise<void> {
+    const productData = await this.adminService.getproduct();
+    res.sendFile(productData, { root: './uploads/assignproduct' });
+    console.log(productData);
+  }
+
+// all product show img
+@Get('/getproductimg')
+getproductimg(@Res() res): object {
+    res.sendFile({ root: './uploads/assignproduct' })
+    return this.adminService.getproductimg();
+}
+    // product show img by id
+    @Get('/getproductimgbyid/:ProductId')
+    getproductimgbyid(@Param('ProductId', ParseIntPipe) ProductId:number, @Res() res): object {
+        res.sendFile({ root: './uploads/assignproduct' })
+        return this.adminService.getproductimgbyid(ProductId);
+    }
+
+
+
+
+
+
 // * Feature 2 : Search Product by id
 // @Get("/ProductById/:id")
 // getProductById(@Param('id', ParseIntPipe) id: ProductDTO, @Body() mydata:ProductDTO): any
@@ -194,6 +267,13 @@ productdeletebyid(@Param('id', ParseIntPipe) id:number): object{
     return this.adminService.productdeletebyid(id);
 
     }
+
+    @Get('/searchUser/:email')
+    async searchUser(@Param('email') email: string): Promise<string> {
+    const userType = await this.adminService.searchUser(email);
+    return userType;
+}
+
 
     // * Feature 3 : Update a Products by id
 // @Put('/update_product/:id')

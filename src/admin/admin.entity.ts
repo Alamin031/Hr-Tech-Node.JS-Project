@@ -32,6 +32,8 @@ Product_Image: string;
 Quantity: number;
 @Column()
 Product_Category: string;
+@Column()
+Status: string;
 @ManyToOne(() => SupplierEntity, (Supplier) => Supplier.Product)
 Supplier: SupplierEntity;
 @OneToMany(() => Order, (order) => order.products)
@@ -43,3 +45,17 @@ ProductReview: ProductReview[];
 }
 
 
+@Entity('contacts')
+export class ContactEntity {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  name: string;
+
+  @Column()
+  email: string;
+
+  @Column()
+  message: string;
+}

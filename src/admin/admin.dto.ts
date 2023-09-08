@@ -40,7 +40,7 @@ export class ProductDTO{
     id:number;
     @IsNotEmpty()
     @IsString({message:"invalid name"})
-    @Matches( /^[a-zA-Z]+$/, {message:"enter a proper name"})
+    // @Matches( /^[a-zA-Z]+$/, {message:"enter a proper name"})
     Product_Name: string;
     @IsNotEmpty()
     @IsString({message:"invalid name"})
@@ -58,9 +58,23 @@ export class ProductDTO{
     @IsNotEmpty()
     @IsString({message:"invalid name"})
     Product_Category: string;
+    @IsNotEmpty()
+    @IsString({message:"invalid name"})
+    Status: string;
     // @IsNotEmpty()
     // Supplier_id: number;
    
 
 }
 
+export class ContactDTO {
+    @IsNotEmpty()
+    name: string;
+  
+    @IsNotEmpty()
+    @IsEmail()
+    email: string;
+  
+    @IsNotEmpty()
+    message: string;
+  }

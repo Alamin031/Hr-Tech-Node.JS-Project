@@ -1,8 +1,8 @@
 import { HttpStatus, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
-import { CustomerDTO, CustomerUpdateDTO, CustomerLoginDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewUpdateDTO, ReviewDTO, AssignProductDTO, CustomerPicDTO, editProductDTO, AddAddressDTO } from "./customer.dto";
+import { CustomerDTO, CustomerUpdateDTO, CustomerLoginDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewUpdateDTO, ReviewDTO, AssignProductDTO, CustomerPicDTO, editProductDTO, AddAddressDTO, ForgetPassword } from "./customer.dto";
 // import { ReviewDTO } from "./review.dto";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Raw, Repository } from "typeorm";
 import {Assign_Product, CustomerEntity, DeliveryMan_Review, PinCodeEntity, ProductReview } from "./customer.entity";
 import { promises } from "dns";
 import { Order } from "src/order/Order.entity";
@@ -13,6 +13,10 @@ import { AddressEntity } from "./customer_address.entity";
 import { OrderDTO } from "src/order/order.dto";
 import { existsSync } from "fs";
 import { join } from "path";
+import { Twilio } from 'twilio';
+import nodemailer from 'nodemailer';
+import { Console } from "console";
+
 
 
 
@@ -84,7 +88,6 @@ async uploadFile(data: CustomerDTO): Promise<CustomerEntity> {
     async login(query:CustomerLoginDTO){
         const email = query.email;
         const password = query.password;
-        const username = query.username;
         const CustomerDetails = await this.customerRepo.findOneBy({ email : email });
         
         if (CustomerDetails === null) {
@@ -93,12 +96,7 @@ async uploadFile(data: CustomerDTO): Promise<CustomerEntity> {
             status: HttpStatus.NOT_FOUND,
             message: "Your Account Not found. Please Register First"
         })}
-        else if (CustomerDetails.username !== username) {
-            throw new NotFoundException
-            ({
-            status: HttpStatus.NOT_FOUND,
-            message: "Your Account Not found. Please Register First"
-        })}
+
         else {
             if (await bcrypt.compare(password, CustomerDetails.password)) {
             return CustomerDetails;
@@ -132,7 +130,6 @@ async uploadFile(data: CustomerDTO): Promise<CustomerEntity> {
 async Loginn (data:CustomerLoginDTO): Promise<CustomerEntity> {
     const email = data.email;
     const password = data.password;
-    const username = data.username;
     const CustomerDetails = await this.customerRepo.findOneBy({ email : email });
         
         if (CustomerDetails === null) {
@@ -140,12 +137,6 @@ async Loginn (data:CustomerLoginDTO): Promise<CustomerEntity> {
             ({
             status: HttpStatus.NOT_FOUND,
             message: "Your Account Not found. Please Register First"
-        })}
-        else if (CustomerDetails.username !== username) {
-            throw new NotFoundException
-            ({
-            status: HttpStatus.NOT_FOUND,
-            message: "Your user name Not found. Please Register First"
         })}
         else {
             if (await bcrypt.compare(password, CustomerDetails.password)) {
@@ -160,6 +151,10 @@ async Loginn (data:CustomerLoginDTO): Promise<CustomerEntity> {
         }
     }
 
+}
+
+async getAdminByEmail(email: string): Promise<CustomerEntity> {
+    return this.customerRepo.findOneBy({ email: email });
 }
 
 // async Logout(@Session() session, email: string) {
@@ -204,6 +199,17 @@ async UpdateProfilePic(id: number, updated_data: CustomerPicDTO): Promise<Custom
         this.customerRepo.delete(id);
         return {"Success":"Your Account Deleted Successfully"};
     }
+
+// * Feature 7 : View Customer Images  by email
+//Now Run this Query in Postman
+async getimagebyemail(email:string) {
+    const mydata:CustomerPicDTO =await this.customerRepo.findOneBy({ email:email});
+    console.log(mydata);
+    return  mydata.profilePic;
+}
+
+
+
 
     // delete customer account by id
 
@@ -258,6 +264,11 @@ async UpdateAddressInfo(id:number, updated_data: AddressEntity): Promise<Address
     return this.AddressRepo.findOneBy({id: id});
 }
 
+  //show admin profile details by email
+  async showAdminProfileDetails(email) {
+    return await this.customerRepo.findOneBy({ email : email });
+}
+
 
 // async AddAddress(data: AddressEntity): Promise<AddressEntity> {
 //     return this.AddressRepo.save(data);
@@ -292,7 +303,7 @@ DeleteAddressInfo(id: number): any {
         return this.ProductReviewRepo.save(review);
 }
 // * Feature 14 : Update customer review
-async UpdatereviewInfo(id:number, updated_data: ReviewDTO): Promise<ProductReview> {    
+async UpdatereviewInfo(id:number, updated_data: ReviewUpdateDTO): Promise<ProductReview> {    
     await this.ProductReviewRepo.update(id, updated_data); // Where to Update , Updated Data
       return this.ProductReviewRepo.findOneBy({id: id});
     }
@@ -318,7 +329,11 @@ async UpdatereviewInfo(id:number, updated_data: ReviewDTO): Promise<ProductRevie
             },
         });                 
     }
-  
+  // add review by order id
+    async ProductReviewbyorderid(id:number,review_info: ReviewDTO) : Promise<ProductReview> {
+        console.log(review_info);
+        return this.ProductReviewRepo.save(review_info);
+    }
 
     // Feature 17 : View  Review By Product Id
     async getreviewbyproductid(productid):Promise<ProductEntity[]> {
@@ -332,7 +347,7 @@ async UpdatereviewInfo(id:number, updated_data: ReviewDTO): Promise<ProductRevie
     }
 
 
-
+// add review by customer id
    
     
 
@@ -430,6 +445,13 @@ async searchproduct(id: number): Promise<ProductEntity> {
     return this.ProductsRepo.findOneBy({ id });
 
 }
+async searchProductByFirstWord(query: string): Promise<ProductEntity[]> {
+    return this.ProductsRepo.find({
+      where: {
+        Product_Name: Raw(alias => `${alias} ILIKE '${query}%'`),
+      },
+    });
+  }
 
 
 
@@ -504,6 +526,22 @@ DeleteOrder(id: number): any {
         });
     }
 
+    // show product image by id
+    async getproductimgbyid(productid:number) {
+        const mydata:ProductEntity =await this.ProductsRepo.findOneBy({ id:productid});
+        console.log(mydata);
+        return  mydata.Product_Image;
+            }  
+            
+            // search product by id
+            // async searchproduct(id: number): Promise<ProductEntity> {
+            //     const product = await this.ProductsRepo.findOneBy({ id });
+            //     if (!product) {
+            //         throw new NotFoundException('Product not found');
+            //     }
+            //     return product;
+            // }
+
 
       async ForgetPassword(email: string){
         // * Generate 6 Digit Code Pin
@@ -547,6 +585,98 @@ Hr Tech Team
                         //     text: emailBody,
                         //   });
       }
+
+
+
+      async OTPSendEmail(email: string): Promise<any> {
+        const otpCode = this.generateOTPCode();
+        const nodemailer = require('nodemailer');        
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: 'mridoy031@gmail.com',
+            pass: 'usjnybztrzrqlzll',
+          },
+        });
+    
+        const mailOptions = {
+          from: 'mridoy031@gmail.com',
+          to: email,
+          subject: 'Your OTP Code',
+          text: `Your OTP Code: ${otpCode}`,
+        };
+    
+        try {
+          await transporter.sendMail(mailOptions);
+          console.log('Email sent');
+          console.log('OTP Code:', otpCode);
+        //   return { message: 'OTP sent successfully' };
+        return {otpCode};
+        } catch (error) {
+          console.error('Error sending email:', error);
+          return { error: 'Failed to send OTP' };
+        }
+      }
+    
+      async OTPSendSMS(phoneNumber: string): Promise<any> {
+        const otpCode = this.generateOTPCode();
+    
+        const twilioClient = new Twilio('your_twilio_account_sid', 'your_twilio_auth_token');
+    
+        try {
+          const message = await twilioClient.messages.create({
+            body: `Your OTP Code: ${otpCode}`,
+            from: 'your_twilio_phone_number',
+            to: phoneNumber,
+          });
+    
+          console.log('SMS sent:', message.sid);
+    
+          return { message: 'OTP sent successfully' };
+        } catch (error) {
+          console.error('Error sending SMS:', error);
+          return { error: 'Failed to send OTP' };
+        }
+      }
+    
+      private generateOTPCode(): number {
+        return Math.floor(100000 + Math.random() * 900000);
+      }
+
+
+      async  Forgetpassword(forgetpass : ForgetPassword) : Promise<any>
+      {
+        const userInfo =await this.customerRepo.findOneBy({email: forgetpass.email});
+        console.log(userInfo);
+        if(userInfo != null)
+        {
+            const salt = await bcrypt.genSalt();
+            forgetpass.confirmpassword = await bcrypt.hash(forgetpass.confirmpassword, salt);
+            userInfo.password = forgetpass.confirmpassword;
+            this.customerRepo.save(userInfo);
+            const value = true;
+            console.log(value);
+            return ({value});
+        }
+        else
+        {
+            const id = 0;
+            const error = "No User Found ";
+            console.log(error);
+            return ({id, error});
+
+        }
+      }
+
+
+
+
+
+
+
+
+
+    
 //   OTPSendEmail(email: string): any {
 //     const buffer = randomBytes(2);
 //     const otpCode = buffer.readUInt16BE(0) % 10000;

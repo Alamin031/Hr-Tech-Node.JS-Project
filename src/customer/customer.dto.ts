@@ -48,7 +48,22 @@ export class CustomerDTO{
 
 }
 
+export class ForgetPassword
+{
 
+ 
+    email : string;
+    
+    @IsString({message:"Invaild Input Data Type"})
+    @IsNotEmpty({message:"Please Enter Password"})
+    @MinLength(8,{message:"Password is Too Short"})
+    newpassword : string;
+
+    @IsString({message:"Invaild Input Data Type"})
+    @IsNotEmpty({message:"Please Enter Password"})
+    @MinLength(8,{message:"Password is Too Short"})
+    confirmpassword : string;
+}
 
 export class CustomerPicDTO{
    //  @IsNumber()
@@ -138,8 +153,6 @@ export class CustomerUpdateDTO{
    @IsEmail({}, { message: "invalid email" })
   email: string;
   password: string;
-  username: string;
-
 }
 
  export class ReviewDTO{
@@ -195,7 +208,6 @@ export class AssignProductDTO{
    @IsNotEmpty()
    @IsString({message:"invalid date"})   
    Date: string;
-   @IsString({message:"invalid status"})
    Pic: string;
    @IsString({message:"invalid Address"})
    Address: string;

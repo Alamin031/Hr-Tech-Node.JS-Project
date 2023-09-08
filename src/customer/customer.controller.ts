@@ -1,5 +1,5 @@
-import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, HttpStatus, NotAcceptableException, NotFoundException, Param, ParseIntPipe, Post, Put, Query, Request, Res, Session, UploadedFile, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from "@nestjs/common";
-import { AddAddressDTO, AssignProductDTO, CustomerDTO, CustomerPicDTO, CustomerUpdateDTO, DRevieweDTO, DRevieweUpdateDTO, ReviewDTO, ReviewUpdateDTO, editProductDTO } from "./customer.dto";
+import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, HttpException, HttpStatus, NotAcceptableException, NotFoundException, Param, ParseIntPipe, Post, Put, Query, Req, Request, Res, Session, UnauthorizedException, UploadedFile, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from "@nestjs/common";
+import { AddAddressDTO, AssignProductDTO, CustomerDTO, CustomerPicDTO, CustomerUpdateDTO, DRevieweDTO, DRevieweUpdateDTO, ForgetPassword, ReviewDTO, ReviewUpdateDTO, editProductDTO } from "./customer.dto";
 import { CustomerService } from "./customer.service";
 // import { ReviewDTO } from "./review.dto";
 import { FileInterceptor } from '@nestjs/platform-express/multer';
@@ -160,9 +160,39 @@ async Loginn(@Body() data:CustomerDTO, @Session() session) {
 }
 
 
+@Post('/signout')
+// @UseGuards(SessionGuard)
+signout( @Req() req) {
+    if (req.session.destroy()) {
+        return true;
+    }
+    else {
+        throw new UnauthorizedException("invalid actions");
+    }
+}
 
+@Get('/getuser/:email')
+async getAdminByEmail(email: string): Promise<CustomerEntity> {
+    const res = await this.customerService.getAdminByEmail(email);
+    if (res !== null) {
+        return await this.customerService.getAdminByEmail(email);
+    }
+    else {
+        throw new HttpException("Admin not found", HttpStatus.NOT_FOUND);
+    }
+}
 
-
+// show admin profil details by email
+@Get('/showprofile/:email')
+// @UseGuards(SessionGuard)
+    showAdminProfileDetails(@Session() session) {
+    // console.log(session.email);
+    return this.customerService.showAdminProfileDetails(session.email);
+}
+@Get('/getimage/:name')
+getImages(@Param('name') name, @Res() res) {
+    res.sendFile(name, { root: './uploads/customer_register_img' })
+}
 
 
 // * Feature 3 : view customer profile
@@ -213,12 +243,39 @@ async UpdateProfilePic(@Session() session, @Body() updated_data:CustomerPicDTO, 
 }
 // * Feature 7 : View Customer Images
   @Get('getimagebycustomerid/:customerId')
-  @UseGuards(SessionGuard)
+//   @UseGuards(SessionGuard)
     async getimagebyid(@Param('customerId', ParseIntPipe) customerId:number, @Res() res){
     const filename = await this.customerService.getimagebycustomerid(customerId);
     res.sendFile(filename, { root: './uploads/customer_register_img' })
 
 }
+// * Feature 7 : View Customer Images  by email
+@Get('getimagebyemail/:email')
+//   @UseGuards(SessionGuard)
+async getimagebyemail(@Param('email') email:string, @Res() res){
+const filename = await this.customerService.getimagebyemail(email);
+res.sendFile(filename, { root: './uploads/customer_register_img' })
+    
+    }
+
+
+// show product image by id
+@Get('/getproductimgbyid/:ProductId')
+    async getproductimgbyid(@Param('ProductId', ParseIntPipe) ProductId:number, @Res() res){
+    const filename = await this.customerService.getproductimgbyid(ProductId);
+    res.sendFile(filename, { root: './uploads/assignproduct' })
+
+}
+
+
+
+
+
+
+
+
+
+
 @Get('/showprofilepicture1')
 @UseGuards(SessionGuard)
 showProfileDetailss(@Session() session) {
@@ -290,13 +347,28 @@ async createAddress(@Param('id', ParseIntPipe) data: { customer: CustomerEntity,
 
 
     // .....................Customer Review Manage .....................//
-//now run this query in postman
-@Post('/add_review')
-@UseGuards(SessionGuard)
+// //now run this query in postman
+// @Post('/add_review')
+// @UseGuards(SessionGuard)
+// @UsePipes(new ValidationPipe())
+// ProductReview(@Session() session, @Body() data:ReviewDTO):object {
+//         console.log(data);
+//         return this.customerService.ProductReview(session.CustomerID, data);
+// }
+// add review by customer id
+@Post('/addreviewbycustomerid/:customerId')
 @UsePipes(new ValidationPipe())
-ProductReview(@Session() session, @Body() data:ReviewDTO):object {
-        console.log(data);
-        return this.customerService.ProductReview(session.CustomerID, data);
+ProductReview(@Param('customerId', ParseIntPipe) customerId:number, @Body() review) {
+    console.log(review);
+    return this.customerService.ProductReview(customerId,review);
+}
+
+// add review by order id
+@Post('/addreviewbyorderid/:orderId')
+@UsePipes(new ValidationPipe())
+ProductReviewbyorderid(@Param('orderId', ParseIntPipe) orderId:number, @Body() review) {
+    console.log(review);
+    return this.customerService.ProductReviewbyorderid(orderId,review);
 }
 
 @Post('/addreviews')
@@ -307,15 +379,15 @@ addreviews(@Body() review) {
 
 // * Feature 2 : Update review Info
 @Put('/update_review_info/:id')
-@UseGuards(SessionGuard)
+// @UseGuards(SessionGuard)
 @UsePipes(new ValidationPipe())
-UpdatereviewInfo(@Param('id', ParseIntPipe) id:number, @Body() updated_data:ReviewDTO): object{
+UpdatereviewInfo(@Param('id', ParseIntPipe) id:number, @Body() updated_data:ReviewUpdateDTO): object{
     return this.customerService.UpdatereviewInfo(id,updated_data);
 }
 
 // * Feature 3 : Delete review Info
 @Delete('/delete_review/:id')
-@UseGuards(SessionGuard)
+// @UseGuards(SessionGuard)
 DeletereviewInfo(@Param('id', ParseIntPipe) id:number): number{
     return this.customerService.DeletereviewInfo(id);
 }
@@ -338,35 +410,40 @@ getreviewbycustomerid(@Param('customerId', ParseIntPipe) customerId:number) {
 
 
     // .....................Customer Assign_Product Manage .....................//
-// * Feature 1 : Add a customer Assign_Product
-@Post('/add_assign_product')
-@UseGuards(SessionGuard)
-@UseInterceptors(FileInterceptor('image',
-        {
-            fileFilter: (req, file, cb) => {
-                if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/))
-                    cb(null, true);
-                else {
-                    cb(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false);
-                }
-            },
-            limits: { fileSize: 3000000 },
-            storage: diskStorage({
-                destination: './uploads/assignproduct',
-                filename: function (req, file, cb) {
-                    cb(null, Date.now() + file.originalname)
-                },
-            })
-        }
-    ))
-    @UsePipes(new ValidationPipe)
-    assignproduct(@Body() mydata:AssignProductDTO,@UploadedFile() imageobj: Express.Multer.File){
-console.log(mydata);
-console.log(imageobj.filename);
-mydata.Pic = imageobj.filename;
-return this.customerService.assignproduct(mydata);
+// // * Feature 1 : Add a customer Assign_Product
+  @Post('/add_assign_product')
+  @UsePipes(new ValidationPipe)
+  @UseInterceptors(FileInterceptor('profilePicture',
+  { fileFilter(req, file, callback) {
+      if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/)) {
+          callback(null, true);
+      } 
+      else {
+          callback(new MulterError('LIMIT_UNEXPECTED_FILE', 'profilePicture'), false)
+      }
+  },
+  limits: { fileSize: 1000000 },
+  storage:diskStorage({
+      destination: './uploads/assignproduct',
+      filename(req, file, callback) {
+          callback(null, Date.now() + file.originalname)
+      },
+  })
+  }))
+  async assignproduct(@Session() session, @Body() data:AssignProductDTO, @UploadedFile() profilePicture: Express.Multer.File) {
+    data.Pic = profilePicture.filename;
+    if (!profilePicture || !profilePicture.filename) {
+        throw new BadRequestException('Profile picture is required.');
+      }
+      console.log(profilePicture)
+      console.log(data);
+      return this.customerService.assignproduct(data);
+    }
 
-}
+
+
+
+
 
 @Get('/getproblemsProduct')
     @UseGuards(SessionGuard)
@@ -472,6 +549,10 @@ ViewAllProductInfo(): object{
     return this.customerService.ViewAllProductInfo();
 }
 
+
+
+
+
 @Get('/searchproduct/:id')
 async searchproduct(@Param('id', ParseIntPipe) id: number): Promise<ProductEntity> {
 
@@ -486,6 +567,17 @@ async searchproduct(@Param('id', ParseIntPipe) id: number): Promise<ProductEntit
             message: "Product not found"
         });
     }
+}
+
+@Get('/search/:query')
+async searchProductsByFirstWord(@Param('query') query: string): Promise<ProductEntity[]> {
+  const products = await this.customerService.searchProductByFirstWord(query);
+
+  if (!products || products.length === 0) {
+    throw new NotFoundException('No products found');
+  }
+
+  return products;
 }
     // .....................Customer order  Manage .....................//
 
@@ -525,8 +617,24 @@ async searchproduct(@Param('id', ParseIntPipe) id: number): Promise<ProductEntit
 
 
 
-
+@Post('/OTPsend/:UserCredential')
+  async OTPSend(@Param('UserCredential') UserCredential: string): Promise<any> {
+    if (!isNaN(Number(UserCredential))) {
+      return this.customerService.OTPSendSMS(UserCredential);
+    } else {
+      return this.customerService.OTPSendEmail(UserCredential);
+    }
+  }
     
+  @Post('/Forgetpassword')
+  @UsePipes (new ValidationPipe)
+  async Forgetpassword(@Body() forgetpass : ForgetPassword) : Promise<any>
+  {
+    console.log(forgetpass);
+      return this.customerService.Forgetpassword(forgetpass);
+  }
+
+
     // @Put('/updateorders')
     //     updateOrders(@Body() data:OrderUpdateDTO): object{
     //         return this.customerService.updateOrders(data);

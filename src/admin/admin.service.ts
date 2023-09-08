@@ -1,10 +1,10 @@
 import { HttpStatus, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
-import { AdminDTO, AdminLoginDTO, ProductDTO, adminCustomerDTO } from "./admin.dto";
+import { AdminDTO, AdminLoginDTO, ContactDTO, ProductDTO, adminCustomerDTO } from "./admin.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { CustomerEntity, ProductReview } from "src/customer/customer.entity";
 import { Order } from "src/order/Order.entity";
 import { Repository } from "typeorm";
-import { ProductEntity, AdminEntity } from "./admin.entity";
+import { ProductEntity, AdminEntity, ContactEntity } from "./admin.entity";
 import { SupplierEntity } from "src/supplier/Supplier.entity";
 import { CustomerDTO, CustomerPicDTO, CustomerUpdateDTO } from "src/customer/customer.dto";
 import * as bcrypt from 'bcrypt';
@@ -29,10 +29,58 @@ export class AdminService{
 
     @InjectRepository(SupplierEntity)
     private SupplierRepo: Repository<SupplierEntity>,
+    @InjectRepository(ContactEntity)
+    private contactRepo: Repository<ContactEntity>,
 
     @InjectRepository(CustomerEntity)
     private customerRepo: Repository<CustomerEntity>
     ){}
+
+    
+
+//customer search by email
+    async customersearch(email:string): Promise<CustomerEntity>{
+        return this.customerRepo.findOneBy({ email });
+    }
+    async createContact(data: ContactDTO): Promise<ContactEntity> {
+        const contact = this.contactRepo.create(data);
+        return this.contactRepo.save(contact);
+      }
+    
+      async getAllContacts(): Promise<ContactEntity[]> {
+        return this.contactRepo.find();
+      }
+
+// logout
+    async logout(): Promise<string>{
+        return "Logout successfull";
+    }
+
+    // view product and image
+    async getproduct(): Promise<ProductEntity[]>{
+        console.log("get product");
+        return this.ProductsRepo.find();
+    }
+
+    async getimagebyadminid(id:number) {
+        const mydata:ProductDTO=await this.ProductsRepo.findOneBy({ id:id});
+        console.log(mydata);
+        return  mydata;
+            }
+
+// all product show img
+    async getproductimg(): Promise<ProductEntity[]>{
+        const mydata:ProductEntity[] = await this.ProductsRepo.find();
+        console.log(mydata);
+        return mydata;
+    }  
+    
+    // product show img by id
+    async getproductimgbyid(id:number): Promise<ProductEntity>{
+        const mydata:ProductEntity = await this.ProductsRepo.findOneBy({ id:id});
+        console.log(mydata);
+        return mydata;
+    }
 
 
     // add admin
@@ -210,6 +258,32 @@ async customerorderss(id):Promise<Order[]>
 } 
 
 
+async searchUser(email: string): Promise<string> {
+    const customerUser = await this.customerRepo.findOne({
+      where: {
+        email: email,
+      }
+    });
+  
+    const AdminUser = await this.AdminRepo.findOne({
+      where: {
+        email: email,
+      }
+    });
+  
+    if (customerUser) {
+      return "Customer";
+    } else if (AdminUser) {
+      return "Admin";
+    } else {
+      return "Not found";
+    }
+  }
+
+  //show admin profile details by email
+    async showAdminProfileDetails(email) {
+        return await this.AdminRepo.findOneBy({ email : email });
+    }
 
 
 // async ViewCustomerProfile(id: number): Promise<adminCustomerDTO> {
